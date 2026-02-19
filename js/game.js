@@ -680,45 +680,64 @@ const Game = (() => {
     div.dataset.key = tile.key;
 
     if (faceDown) {
-      // Pink back with ribbon emoji — no img needed
       const span = document.createElement('span');
       span.className = 'tile-back';
       span.textContent = '🎀';
       div.appendChild(span);
     } else {
-      // Try SVG tile face image
+      // ALWAYS render text content first (guaranteed visible)
+      renderTileTextContent(div, tile);
+
+      // Then try to load SVG as enhancement
       const imgName = TILE_IMAGE_MAP[tile.key];
       if (imgName) {
-        const img = document.createElement('img');
-        img.src = `${TILE_ASSET_BASE}${imgName}.svg`;
+        const img = new Image();
         img.className = 'tile-img';
-        img.alt = tile.name || tile.display || tile.key;
+        img.alt = '';
         img.draggable = false;
-        // Fallback to text if image fails
-        img.onerror = function() {
-          this.remove();
-          renderTileTextContent(div, tile);
+        img.onload = function() {
+          // SVG loaded successfully — overlay on top of text
+          div.appendChild(this);
         };
-        div.appendChild(img);
-      } else {
-        // Text rendering fallback
-        renderTileTextContent(div, tile);
+        img.src = TILE_ASSET_BASE + imgName + '.svg';
       }
     }
 
     return div;
   }
 
-  // Helper: render tile content as text (fallback)
+  // Helper: render tile content as colored text (always visible, distinguishable)
   function renderTileTextContent(div, tile) {
-    const suitColor = TILE_SUITS[tile.suit]?.color || '#333';
-    if (['jian', 'feng'].includes(tile.suit)) {
+    // Specific colors per tile type
+    const JIAN_COLORS = { jz: '#e74c3c', jf: '#2ecc71', jb: '#5b9bd5' };
+
+    if (tile.suit === 'jian') {
+      // 箭牌: 中=red, 发=green, 白=blue
       const span = document.createElement('span');
       span.className = 'tile-honor';
-      span.style.color = suitColor;
+      const color = JIAN_COLORS[tile.key] || '#333';
+      span.style.color = color;
+      span.textContent = tile.display;
+      if (tile.key === 'jb') {
+        // 白板: empty face with blue border
+        span.style.color = '#5b9bd5';
+        span.style.textShadow = 'none';
+        div.style.borderColor = '#5b9bd5';
+        div.style.borderWidth = '2px';
+      }
+      div.appendChild(span);
+    } else if (tile.suit === 'feng') {
+      // 风牌: bold black
+      const span = document.createElement('span');
+      span.className = 'tile-honor';
+      span.style.color = '#1a1a1a';
+      span.style.fontWeight = '900';
       span.textContent = tile.display;
       div.appendChild(span);
     } else {
+      // 数牌: rank number + suit name, color-coded
+      // wan=red, tiao=green, tong=blue
+      const suitColor = TILE_SUITS[tile.suit]?.color || '#333';
       const rank = document.createElement('span');
       rank.className = 'tile-rank';
       rank.style.color = suitColor;

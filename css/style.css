@@ -158,7 +158,16 @@ body {
 
 /* Hands */
 .hand { display: flex; gap: 2px; justify-content: center; }
-.hand-bottom { gap: 3px; flex-wrap: nowrap; overflow-x: auto; padding: 4px 0; }
+.hand-bottom {
+  gap: 3px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 0;
+  max-width: 100%;
+  scrollbar-width: none; /* Firefox */
+}
+.hand-bottom::-webkit-scrollbar { display: none; }
 .hand-side { flex-direction: column; gap: 1px; }
 .hand-top .tile { width: 24px; height: 32px; }
 
@@ -232,8 +241,17 @@ body {
 @media (max-width: 375px) {
   /* iPhone SE and smaller — 320px logical */
   .tile { width: 28px; height: 38px; border-radius: 4px; }
+  .tile .tile-rank { font-size: 15px; }
+  .tile .tile-suit { font-size: 8px; }
+  .tile .tile-honor { font-size: 16px; }
   .tile-sm { width: 18px; height: 24px; }
+  .tile-sm .tile-rank { font-size: 11px; }
+  .tile-sm .tile-suit { font-size: 6px; }
+  .tile-sm .tile-honor { font-size: 12px; }
   .tile-mini { width: 14px !important; height: 18px !important; }
+  .tile-mini .tile-rank { font-size: 8px; }
+  .tile-mini .tile-suit { font-size: 5px; }
+  .tile-mini .tile-honor { font-size: 8px; }
   .hand-bottom { gap: 1px; }
   .hand { gap: 1px; }
   .discard-pool .tile { width: 16px; height: 20px; }
@@ -247,9 +265,15 @@ body {
 }
 
 @media (max-width: 320px) {
-  /* Absolute minimum */
+  /* Absolute minimum — iPhone SE (320px) */
   .tile { width: 24px; height: 32px; }
+  .tile .tile-rank { font-size: 13px; }
+  .tile .tile-suit { font-size: 7px; }
+  .tile .tile-honor { font-size: 14px; }
   .tile-sm { width: 16px; height: 22px; }
+  .tile-sm .tile-rank { font-size: 10px; }
+  .tile-sm .tile-suit { font-size: 5px; }
+  .tile-sm .tile-honor { font-size: 10px; }
   .hand-bottom { gap: 0px; }
   .mahjong-table { max-width: 300px; }
 }
@@ -258,6 +282,13 @@ body {
   /* Tablet/Desktop */
   .mahjong-table { max-width: 560px; }
   .tile { width: 42px; height: 56px; }
+  .tile .tile-rank { font-size: 22px; }
+  .tile .tile-suit { font-size: 11px; }
+  .tile .tile-honor { font-size: 24px; }
+  .tile-sm { width: 28px; height: 36px; }
+  .tile-sm .tile-rank { font-size: 15px; }
+  .tile-sm .tile-suit { font-size: 8px; }
+  .tile-sm .tile-honor { font-size: 16px; }
   .discard-pool .tile { width: 24px; height: 32px; }
   .discard-pool { max-width: 240px; }
 }

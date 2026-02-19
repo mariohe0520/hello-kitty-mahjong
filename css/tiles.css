@@ -52,13 +52,21 @@
   box-shadow: 0 1px 0 #b8b098, 0 1px 3px rgba(0,0,0,0.15);
 }
 
-/* ─── Tile Image (SVG face) ─── */
+/* ─── Tile Image (SVG face — enhancement layer over text) ─── */
 .tile-img {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
   display: block;
   pointer-events: none;
+  z-index: 2;
+  background: linear-gradient(175deg, #fffef8 0%, #f5f0e0 40%, #e8e0c8 100%);
+  border-radius: inherit;
+  padding: 2px;
+  box-sizing: border-box;
 }
 
 /* ─── Selected tile ─── */
@@ -95,24 +103,29 @@
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
 }
 
-/* ─── Tile content (text fallback) ─── */
+/* ─── Tile content (text — primary render) ─── */
 .tile-rank {
   font-size: 18px;
   line-height: 1;
   font-weight: 900;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+  pointer-events: none;
 }
 
 .tile-suit {
   font-size: 9px;
   line-height: 1;
   margin-top: 1px;
-  opacity: 0.8;
+  font-weight: 700;
+  pointer-events: none;
 }
 
 .tile-honor {
   font-size: 20px;
   font-weight: 900;
   line-height: 1;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+  pointer-events: none;
 }
 
 /* ─── Small tiles (opponents / melds) ─── */
@@ -130,14 +143,17 @@
 
 .tile-sm .tile-rank {
   font-size: 13px;
+  font-weight: 900;
 }
 
 .tile-sm .tile-suit {
   font-size: 7px;
+  font-weight: 700;
 }
 
 .tile-sm .tile-honor {
   font-size: 14px;
+  font-weight: 900;
 }
 
 .tile-sm .tile-back {
@@ -146,6 +162,10 @@
 
 .tile-sm::before {
   height: 3px;
+}
+
+.tile-sm .tile-img {
+  padding: 1px;
 }
 
 /* ─── Mini tiles (discard pool) ─── */
@@ -162,18 +182,25 @@
 
 .tile-mini .tile-rank {
   font-size: 10px;
+  font-weight: 900;
 }
 
 .tile-mini .tile-suit {
   font-size: 6px;
+  font-weight: 700;
 }
 
 .tile-mini .tile-honor {
   font-size: 10px;
+  font-weight: 900;
 }
 
 .tile-mini .tile-back {
   font-size: 8px;
+}
+
+.tile-mini .tile-img {
+  padding: 1px;
 }
 
 .tile-mini::before {
