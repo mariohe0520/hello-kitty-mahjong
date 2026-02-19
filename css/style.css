@@ -247,7 +247,7 @@ body {
 /* Side hands: vertical column */
 .hand-side {
   flex-direction: column; gap: 1px;
-  max-height: 100%; overflow: hidden;
+  max-height: 100%; overflow: visible;
 }
 .hand-side .tile {
   width: 36px; height: 14px; min-width: 36px; min-height: 14px;
@@ -381,4 +381,45 @@ body {
   .game-topbar { padding-top: 4px; padding-bottom: 4px; }
   .action-bar { padding: 6px 16px; }
   .mahjong-table { transform: rotateX(0); }
+}
+
+/* ═══ STATS & ACHIEVEMENTS ═══ */
+.stats-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: rgba(255,255,255,0.08); border-radius: 12px;
+  padding: 12px 8px; text-align: center;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.stat-icon { font-size: 24px; margin-bottom: 4px; }
+.stat-value { font-size: 22px; font-weight: 800; color: var(--gold, #f5c518); }
+.stat-label { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 2px; }
+
+.achievements-header {
+  font-size: 16px; font-weight: 700; color: var(--gold, #f5c518);
+  margin-bottom: 12px; padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.achievements-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+}
+.achievement-card {
+  background: rgba(255,255,255,0.05); border-radius: 10px;
+  padding: 10px; text-align: center;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: .2s;
+}
+.achievement-card.unlocked {
+  background: rgba(245,197,24,0.1);
+  border-color: rgba(245,197,24,0.3);
+}
+.achievement-card.locked { opacity: 0.5; }
+.achievement-icon { font-size: 28px; margin-bottom: 4px; }
+.achievement-name { font-size: 13px; font-weight: 700; color: #fff; }
+.achievement-desc { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+.btn-gold {
+  background: linear-gradient(135deg, #f5c518, #d4a843) !important;
+  color: #1a1a2e !important;
 }

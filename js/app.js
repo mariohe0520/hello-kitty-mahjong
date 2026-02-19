@@ -394,12 +394,21 @@ const App = (() => {
     init();
   }
 
+  function showStats() {
+    navigateTo('stats-page');
+    const el = document.getElementById('stats-content');
+    if (el && typeof Stats !== 'undefined') {
+      el.innerHTML = Stats.renderStatsHTML();
+    }
+  }
+
   // ─── Public API ───
   return {
     startGame,
     showTutorial,
     showMultiplayer,
     showSettings,
+    showStats,
     toggleSettings,
     backToMenu,
     nextRound,

@@ -48,13 +48,18 @@
       <span class="btn-text">新手教学</span>
       <span class="btn-desc">从零学会打麻将</span>
     </button>
+    <button class="menu-btn btn-gold" onclick="App.showStats()">
+      <span class="btn-icon">🏅</span>
+      <span class="btn-text">成就</span>
+      <span class="btn-desc">统计数据与成就解锁</span>
+    </button>
     <button class="menu-btn btn-gray" onclick="App.showSettings()">
       <span class="btn-icon">⚙️</span>
       <span class="btn-text">设置</span>
     </button>
   </div>
   <div class="menu-footer">
-    <span class="version">v0.1.0</span>
+    <span class="version">v0.2.0</span>
   </div>
 </div>
 
@@ -125,6 +130,15 @@
   </div>
 </div>
 
+<!-- ===== STATS & ACHIEVEMENTS ===== -->
+<div id="stats-page" class="page" style="display:none">
+  <div class="tutorial-header">
+    <button class="icon-btn" onclick="App.backToMenu()">←</button>
+    <h2>🏅 成就与统计</h2>
+  </div>
+  <div id="stats-content" style="padding:16px;overflow-y:auto;height:calc(100vh - 60px)"></div>
+</div>
+
 <!-- ===== TUTORIAL ===== -->
 <div id="tutorial" class="page" style="display:none">
   <div class="tutorial-header">
@@ -173,6 +187,7 @@
 <script src="js/rules-sichuan.js"></script>
 <script src="js/ai.js"></script>
 <script src="js/game.js"></script>
+<script src="js/stats.js"></script>
 <script src="js/tutorial.js"></script>
 <script src="js/app.js"></script>
 </body>
