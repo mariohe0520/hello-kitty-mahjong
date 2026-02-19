@@ -1067,6 +1067,22 @@ const Game = (() => {
     const tileIndex = player.hand.findIndex(t => t.id === tile.id);
     if (tileIndex === -1) return;
 
+    // Animate the discarded tile out of hand (player's hand area)
+    if (playerIndex === 0) {
+      const handContainer = document.getElementById('hand-bottom');
+      if (handContainer) {
+        const tileEls = handContainer.querySelectorAll('.tile');
+        for (const el of tileEls) {
+          if (el.dataset.id === tile.id) {
+            el.classList.add('discarding');
+            break;
+          }
+        }
+      }
+      // Wait for the initial "pop" part of animation
+      await wait(150);
+    }
+
     // Remove from hand
     player.hand.splice(tileIndex, 1);
     player.hand = TileUtils.sortHand(player.hand);
@@ -1096,14 +1112,15 @@ const Game = (() => {
     const pool = document.getElementById('discard-pool');
     if (!pool) return;
 
-    const tileEl = renderTile(tile, { small: false, mini: true });
+    // Discard tiles are always face-up (visible to all players)
+    const tileEl = renderTile(tile, { small: false, mini: true, faceDown: false });
     tileEl.classList.add('entering');
     tileEl.style.opacity = '0';
-    tileEl.style.transform = 'translateY(-15px) scale(0.5)';
+    tileEl.style.transform = 'translateY(-20px) scale(1.3)';
     pool.appendChild(tileEl);
 
     requestAnimationFrame(() => {
-      tileEl.style.transition = 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      tileEl.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
       tileEl.style.opacity = '1';
       tileEl.style.transform = 'translateY(0) scale(1)';
     });
@@ -1433,16 +1450,27 @@ const Game = (() => {
     el.className = 'action-calligraphy';
     el.textContent = text;
     el.style.color = color;
+
+    // Special golden treatment for "胡"
+    const isHu = text.includes('胡');
+    if (isHu) {
+      el.classList.add('action-hu');
+    }
+
     document.body.appendChild(el);
 
-    // Ink splash particles
+    // Ink splash particles (gold sparkles for Hu)
     const table = document.getElementById('mahjong-table');
     if (table) {
       const rect = table.getBoundingClientRect();
-      Particles.inkSplash(rect.width / 2, rect.height / 2, color);
+      if (isHu) {
+        Particles.goldSparkles(rect.width / 2, rect.height / 2, 40);
+      } else {
+        Particles.inkSplash(rect.width / 2, rect.height / 2, color);
+      }
     }
 
-    setTimeout(() => el.remove(), 900);
+    setTimeout(() => el.remove(), isHu ? 1200 : 900);
   }
 
   // ─── Chi action ───
