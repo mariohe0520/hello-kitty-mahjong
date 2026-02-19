@@ -128,7 +128,7 @@ body {
   max-width: 420px;
   display: grid;
   grid-template-columns: 36px 1fr 36px;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto minmax(60px, 200px) auto;
   grid-template-areas:
     ".     top    ."
     "left  center right"
@@ -233,19 +233,31 @@ body {
   grid-area: center;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center;
-  min-height: 80px;
+  min-height: 60px;
+  max-height: 200px;
+  overflow: hidden;
 }
 .remaining-tiles {
   display: flex; flex-direction: column; align-items: center;
   color: rgba(255,255,255,0.6); font-size: 11px;
+  flex-shrink: 0;
 }
-.remaining-tiles span { font-size: 24px; font-weight: 900; color: var(--gold); }
+.remaining-tiles span { font-size: 22px; font-weight: 900; color: var(--gold); }
 
 .discard-pool {
-  display: flex; flex-wrap: wrap; gap: 2px; justify-content: center;
-  max-width: 180px; margin-bottom: 8px;
+  display: flex; flex-wrap: wrap; gap: 1px; justify-content: center;
+  max-width: 200px;
+  max-height: 120px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin-bottom: 4px;
+  /* Thin scrollbar for overflow */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.3) transparent;
 }
-.discard-pool .tile { width: 20px; height: 26px; font-size: 10px; cursor: default; }
+.discard-pool::-webkit-scrollbar { width: 3px; }
+.discard-pool::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 2px; }
+.discard-pool .tile { width: 18px; height: 22px; font-size: 9px; cursor: default; flex-shrink: 0; }
 
 /* ═══ ACTION BAR ═══ */
 .action-bar {
@@ -253,10 +265,12 @@ body {
   padding: 10px 16px calc(16px + var(--safe-bottom));
   background: rgba(255,255,255,0.95);
   box-shadow: 0 -2px 12px rgba(0,0,0,0.1);
-  /* Ensure visible above any browser chrome */
-  margin-bottom: env(safe-area-inset-bottom, 0px);
-  position: relative;
-  z-index: 10;
+  /* Fixed at bottom so it's ALWAYS clickable */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
 }
 .action-btn {
   padding: 10px 20px; border: none; border-radius: 12px;
@@ -368,6 +382,8 @@ body {
 #game {
   background: linear-gradient(180deg, #0d4a28 0%, #1a3a2a 100%);
   flex-direction: column !important;
+  /* Space for fixed action bar at bottom */
+  padding-bottom: 70px;
 }
 
 /* ═══ ACCESSIBILITY ═══ */
