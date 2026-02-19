@@ -738,6 +738,11 @@ const Game = (() => {
       // 数牌: rank number + suit name, color-coded
       // wan=red, tiao=green, tong=blue
       const suitColor = TILE_SUITS[tile.suit]?.color || '#333';
+      const SUIT_BG = { wan: '#fff0f0', tiao: '#f0fff0', tong: '#f0f0ff' };
+      // Tinted background per suit for instant recognition
+      div.style.background = SUIT_BG[tile.suit] || '';
+      div.style.borderLeftWidth = '3px';
+      div.style.borderLeftColor = suitColor;
       const rank = document.createElement('span');
       rank.className = 'tile-rank';
       rank.style.color = suitColor;

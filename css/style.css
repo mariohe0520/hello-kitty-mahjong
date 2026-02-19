@@ -115,31 +115,49 @@ body {
 }
 .round-info { text-align: center; font-size: 14px; font-weight: 600; }
 
+/* ─── Game layout: CSS Grid (no 3D, no absolute, no rotation) ─── */
 .table-container {
   flex: 1; display: flex; align-items: center; justify-content: center;
-  padding: 8px;
-  /* No perspective — flat layout works better on mobile */
+  padding: 4px;
+  overflow: hidden;
 }
 
 .mahjong-table {
-  width: 100%; max-width: 420px; aspect-ratio: 1;
+  width: 100%; max-width: 420px;
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    ".     top    ."
+    "left  center right"
+    ".     bottom .";
+  gap: 2px;
   background:
     radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.06) 0%, transparent 60%),
     radial-gradient(ellipse at center, #1a8a4c, var(--table-green), var(--table-dark));
-  border-radius: 20px; position: relative;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.1),
-    inset 0 0 60px rgba(0,0,0,0.15);
-  border: 3px solid #0d4a28;
-  /* NO 3D transform on mobile — causes layout overflow and hides side players */
-  transform: none;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4), inset 0 0 40px rgba(0,0,0,0.15);
+  border: 2px solid #0d4a28;
+  padding: 6px;
+  min-height: 0;
+  max-height: calc(100vh - 120px);
 }
 
-/* Player areas */
-.player-area { position: absolute; display: flex; flex-direction: column; align-items: center; }
-.player-top { top: 8px; left: 50%; transform: translateX(-50%); }
-.player-bottom { bottom: 8px; left: 50%; transform: translateX(-50%); width: 95%; }
-.player-left { left: 8px; top: 50%; transform: translateY(-50%) rotate(90deg); transform-origin: center; }
-.player-right { right: 8px; top: 50%; transform: translateY(-50%) rotate(-90deg); transform-origin: center; }
+/* Player areas — no rotation, no absolute positioning */
+.player-area {
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 0; min-height: 0; overflow: hidden;
+}
+.player-top { grid-area: top; }
+.player-bottom { grid-area: bottom; }
+.player-left {
+  grid-area: left;
+  justify-content: center;
+}
+.player-right {
+  grid-area: right;
+  justify-content: center;
+}
 
 .player-label {
   display: flex; align-items: center; gap: 6px;
@@ -168,13 +186,26 @@ body {
   scrollbar-width: none; /* Firefox */
 }
 .hand-bottom::-webkit-scrollbar { display: none; }
-.hand-side { flex-direction: column; gap: 1px; }
+.hand-side {
+  flex-direction: column; gap: 1px;
+  max-height: 100%; overflow: hidden;
+}
+/* Side tiles: tiny to fit vertically */
+.hand-side .tile {
+  width: 20px; height: 14px; min-width: 20px; min-height: 14px;
+  border-radius: 3px; border-width: 1px;
+  box-shadow: 0 1px 0 #b8a880;
+}
+.hand-side .tile .tile-back { font-size: 8px; }
+.hand-side .tile::before { display: none; }
 .hand-top .tile { width: 24px; height: 32px; }
 
 /* Center */
 .table-center {
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  grid-area: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center;
+  min-height: 80px;
 }
 .remaining-tiles {
   display: flex; flex-direction: column; align-items: center;
