@@ -136,10 +136,11 @@ body {
   border-radius: 16px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.4), inset 0 0 40px rgba(0,0,0,0.15);
   border: 2px solid #0d4a28;
-  padding: 6px;
+  padding: 8px 10px;
   gap: 2px;
   /* Fill 70% of viewport height for substantial table */
   min-height: min(70vh, calc(100vh - 120px));
+  overflow: visible;
 }
 
 /* ─── Player areas ─── */
@@ -154,21 +155,24 @@ body {
 /* Middle row: left + center + right */
 .table-middle {
   display: flex; flex-direction: row; align-items: stretch;
-  width: 100%; gap: 2px;
+  width: 100%; gap: 4px;
   /* Expand to fill available table height */
   flex: 1;
   min-height: 200px;
+  overflow: visible;
 }
 
 .player-left {
   width: 44px; flex-shrink: 0;
   justify-content: center; align-items: center;
-  padding: 4px 2px;
+  padding: 4px 0;
+  overflow: visible;
 }
 .player-right {
   width: 44px; flex-shrink: 0;
   justify-content: center; align-items: center;
-  padding: 4px 2px;
+  padding: 4px 0;
+  overflow: visible;
 }
 
 /* Center: discards + remaining */
