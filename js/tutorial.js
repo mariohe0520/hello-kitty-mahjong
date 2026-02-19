@@ -209,20 +209,27 @@ const Tutorial = (() => {
     updateNavButtons(step);
   }
 
+  // ─── Ensure a .tile-demo container exists within the step ───
+  function ensureDemoContainer(container) {
+    let demo = container.querySelector('.tile-demo');
+    if (!demo) {
+      demo = document.createElement('div');
+      demo.className = 'tile-demo';
+      container.appendChild(demo);
+    }
+    demo.innerHTML = '';
+    demo.className = 'tutorial-tile-row';
+    return demo;
+  }
+
   // ─── Render real tile demos for each step ───
   function renderTileDemos(step, container) {
     // Clear existing demos
     stopDemoAnimations();
 
-    const demoContainers = container.querySelectorAll('.tile-demo');
-    demoContainers.forEach(d => d.innerHTML = '');
-
     if (step === 1) {
       // Step 1: Show sequence and triplet
-      const demo = container.querySelector('.tile-demo');
-      if (!demo) return;
-      demo.innerHTML = '';
-      demo.className = 'tutorial-tile-row';
+      const demo = ensureDemoContainer(container);
 
       // Sequence demo
       const seqGroup = createTileGroup('顺子', DEMO_TILES.sequence);
@@ -243,9 +250,7 @@ const Tutorial = (() => {
 
     if (step === 2) {
       // Step 2: Show all suit types with real tiles
-      const demo = container.querySelector('.tile-demo') || container;
-      demo.innerHTML = '';
-      demo.className = 'tutorial-tile-row';
+      const demo = ensureDemoContainer(container);
       demo.style.flexDirection = 'column';
 
       const suitGroups = [
@@ -279,9 +284,7 @@ const Tutorial = (() => {
 
     if (step === 3) {
       // Step 3: Show winning hand decomposition
-      const demo = container.querySelector('.tile-demo') || container;
-      demo.innerHTML = '';
-      demo.className = 'tutorial-tile-row';
+      const demo = ensureDemoContainer(container);
 
       const groups = [
         { label: '顺子', tiles: DEMO_TILES.winHand.slice(0, 3) },

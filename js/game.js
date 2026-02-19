@@ -680,18 +680,13 @@ const Game = (() => {
     div.dataset.key = tile.key;
 
     if (faceDown) {
-      // Use custom Hello Kitty back design
-      const img = document.createElement('img');
-      img.src = `${TILE_ASSET_BASE}custom-back.svg`;
-      img.className = 'tile-img tile-img-back';
-      img.alt = 'back';
-      img.draggable = false;
-      img.loading = 'lazy';
-      // Fallback to original Back.svg if custom fails
-      img.onerror = function() { this.src = `${TILE_ASSET_BASE}Back.svg`; this.onerror = null; };
-      div.appendChild(img);
+      // Pink back with ribbon emoji — no img needed
+      const span = document.createElement('span');
+      span.className = 'tile-back';
+      span.textContent = '🎀';
+      div.appendChild(span);
     } else {
-      // Use real tile face SVG
+      // Try SVG tile face image
       const imgName = TILE_IMAGE_MAP[tile.key];
       if (imgName) {
         const img = document.createElement('img');
@@ -699,307 +694,47 @@ const Game = (() => {
         img.className = 'tile-img';
         img.alt = tile.name || tile.display || tile.key;
         img.draggable = false;
-        img.loading = 'lazy';
+        // Fallback to text if image fails
+        img.onerror = function() {
+          this.remove();
+          renderTileTextContent(div, tile);
+        };
         div.appendChild(img);
       } else {
-        // Fallback to text rendering
-        const suitColor = TILE_SUITS[tile.suit]?.color || '#333';
-        if (['jian', 'feng'].includes(tile.suit)) {
-          const span = document.createElement('span');
-          span.className = 'tile-honor';
-          span.style.color = suitColor;
-          span.textContent = tile.display;
-          div.appendChild(span);
-        } else {
-          const rank = document.createElement('span');
-          rank.className = 'tile-rank';
-          rank.style.color = suitColor;
-          rank.textContent = tile.rank;
-          div.appendChild(rank);
-          const suit = document.createElement('span');
-          suit.className = 'tile-suit';
-          suit.style.color = suitColor;
-          suit.textContent = TILE_SUITS[tile.suit]?.name || '';
-          div.appendChild(suit);
-        }
+        // Text rendering fallback
+        renderTileTextContent(div, tile);
       }
     }
 
     return div;
   }
 
-  // Inject premium tile styles once
+  // Helper: render tile content as text (fallback)
+  function renderTileTextContent(div, tile) {
+    const suitColor = TILE_SUITS[tile.suit]?.color || '#333';
+    if (['jian', 'feng'].includes(tile.suit)) {
+      const span = document.createElement('span');
+      span.className = 'tile-honor';
+      span.style.color = suitColor;
+      span.textContent = tile.display;
+      div.appendChild(span);
+    } else {
+      const rank = document.createElement('span');
+      rank.className = 'tile-rank';
+      rank.style.color = suitColor;
+      rank.textContent = tile.rank;
+      div.appendChild(rank);
+      const suit = document.createElement('span');
+      suit.className = 'tile-suit';
+      suit.style.color = suitColor;
+      suit.textContent = TILE_SUITS[tile.suit]?.name || '';
+      div.appendChild(suit);
+    }
+  }
+
+  // All styles now in tiles.css — no JS injection needed
   function injectTileImageStyles() {
-    if (document.getElementById('premium-tile-styles')) return;
-    const style = document.createElement('style');
-    style.id = 'premium-tile-styles';
-    style.textContent = `
-      .tile {
-        position: relative;
-        background: linear-gradient(175deg, #fffef8 0%, #f5f0e0 40%, #e8e0c8 100%);
-        border: 1.5px solid #c8c0a8;
-        border-radius: 7px;
-        box-shadow:
-          0 3px 0 0 #b8a880,
-          0 4px 0 0 #a09070,
-          0 6px 12px rgba(0,0,0,0.25),
-          inset 0 1px 0 rgba(255,255,255,0.6);
-        overflow: hidden;
-        cursor: pointer;
-        user-select: none;
-        -webkit-user-select: none;
-        transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1),
-                    box-shadow 0.12s ease;
-      }
-      .tile-img {
-        width: 80%;
-        height: 80%;
-        object-fit: contain;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        pointer-events: none;
-      }
-      .tile-img-back {
-        width: 90%;
-        height: 90%;
-        filter: brightness(1.05);
-      }
-      .tile.face-down {
-        background: linear-gradient(135deg, #ff6b9d 0%, #ff8fbf 40%, #ffb3d9 100%);
-        border-color: #e55a8a;
-        box-shadow:
-          0 3px 0 0 #c04878,
-          0 4px 0 0 #a03860,
-          0 6px 12px rgba(0,0,0,0.25),
-          inset 0 1px 0 rgba(255,255,255,0.3);
-      }
-      .tile.selected {
-        transform: translateY(-10px) scale(1.05);
-        box-shadow:
-          0 10px 0 0 #b8a880,
-          0 12px 0 0 #a09070,
-          0 16px 24px rgba(255,107,157,0.35),
-          0 0 15px rgba(255,107,157,0.3),
-          inset 0 1px 0 rgba(255,255,255,0.6);
-        border-color: #ff6b9d;
-        z-index: 10;
-      }
-      .tile.winning {
-        animation: winGlow 0.8s ease-in-out infinite;
-        border-color: #f5c518;
-      }
-      @keyframes winGlow {
-        0%, 100% {
-          box-shadow: 0 3px 0 0 #b8a880, 0 4px 8px rgba(245,197,24,0.3);
-        }
-        50% {
-          box-shadow: 0 3px 0 0 #b8a880, 0 4px 20px rgba(245,197,24,0.7), 0 0 30px rgba(245,197,24,0.4);
-        }
-      }
-      .tile-mini {
-        width: 18px !important;
-        height: 24px !important;
-        font-size: 8px;
-        border-radius: 3px;
-        box-shadow: 0 1px 0 0 #b8a880, 0 2px 4px rgba(0,0,0,0.15);
-      }
-      .tile-mini::before { display: none; }
-
-      /* Turn indicator ring */
-      .player-area.active-turn {
-        position: relative;
-      }
-      .player-area.active-turn::after {
-        content: '';
-        position: absolute;
-        inset: -6px;
-        border-radius: 12px;
-        border: 2px solid #ff6b9d;
-        animation: turnRingPulse 1.5s ease-in-out infinite;
-        pointer-events: none;
-      }
-      @keyframes turnRingPulse {
-        0%, 100% { border-color: rgba(255,107,157,0.6); box-shadow: 0 0 8px rgba(255,107,157,0.3); }
-        50% { border-color: rgba(255,107,157,0.2); box-shadow: 0 0 20px rgba(255,107,157,0.1); }
-      }
-
-      /* Action calligraphy text */
-      .action-calligraphy {
-        position: fixed;
-        top: 45%;
-        left: 50%;
-        transform: translate(-50%, -50%) scale(0);
-        font-size: 96px;
-        font-weight: 900;
-        pointer-events: none;
-        z-index: 300;
-        text-shadow: 0 0 40px currentColor;
-        animation: calligraphyBurst 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-      }
-      @keyframes calligraphyBurst {
-        0% { transform: translate(-50%, -50%) scale(0) rotate(-15deg); opacity: 0; }
-        30% { transform: translate(-50%, -50%) scale(1.4) rotate(3deg); opacity: 1; }
-        60% { transform: translate(-50%, -50%) scale(1.1) rotate(-1deg); opacity: 0.9; }
-        100% { transform: translate(-50%, -50%) scale(0.8) rotate(0deg); opacity: 0; }
-      }
-
-      /* Remaining tiles progress ring */
-      .remaining-ring {
-        width: 56px;
-        height: 56px;
-        position: relative;
-      }
-      .remaining-ring svg {
-        transform: rotate(-90deg);
-      }
-      .remaining-ring .ring-text {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 16px;
-        font-weight: 900;
-        color: #f5c518;
-        text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-      }
-      .remaining-ring .ring-label {
-        position: absolute;
-        bottom: -14px;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 10px;
-        color: rgba(255,255,255,0.5);
-        white-space: nowrap;
-      }
-
-      /* Meld group */
-      .meld-group {
-        display: flex;
-        gap: 1px;
-        margin: 0 4px;
-        opacity: 0.95;
-      }
-      .meld-group .tile {
-        cursor: default;
-      }
-
-      /* Table noise texture overlay */
-      .mahjong-table::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        border-radius: 20px;
-        background: 
-          radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.06) 0%, transparent 60%),
-          repeating-conic-gradient(rgba(0,0,0,0.02) 0% 25%, transparent 0% 50%) 0 0 / 4px 4px;
-        pointer-events: none;
-        z-index: 0;
-      }
-      .mahjong-table > * {
-        position: relative;
-        z-index: 1;
-      }
-
-      /* Settings overlay */
-      .settings-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.5);
-        z-index: 400;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.3s;
-      }
-      .settings-overlay.visible { opacity: 1; }
-      .settings-panel {
-        background: #fff;
-        border-radius: 20px;
-        padding: 28px 24px;
-        max-width: 320px;
-        width: 90%;
-        box-shadow: 0 16px 48px rgba(0,0,0,0.3);
-        transform: translateY(20px);
-        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-      }
-      .settings-overlay.visible .settings-panel { transform: translateY(0); }
-      .settings-panel h3 {
-        font-size: 20px;
-        margin-bottom: 20px;
-        text-align: center;
-        color: #ff6b9d;
-      }
-      .setting-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 0;
-        border-bottom: 1px solid #f0f0f0;
-      }
-      .setting-row:last-child { border-bottom: none; }
-      .setting-label { font-size: 15px; font-weight: 600; }
-      .setting-toggle {
-        width: 48px;
-        height: 28px;
-        border-radius: 14px;
-        background: #ddd;
-        border: none;
-        position: relative;
-        cursor: pointer;
-        transition: background 0.2s;
-      }
-      .setting-toggle.on { background: #ff6b9d; }
-      .setting-toggle::after {
-        content: '';
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        background: #fff;
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        transition: left 0.2s;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-      }
-      .setting-toggle.on::after { left: 22px; }
-
-      /* Que yi men selector (Sichuan) */
-      .queyimen-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.7);
-        z-index: 350;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .queyimen-panel {
-        background: #fff;
-        border-radius: 20px;
-        padding: 28px 24px;
-        text-align: center;
-        box-shadow: 0 16px 48px rgba(0,0,0,0.3);
-      }
-      .queyimen-panel h3 { font-size: 20px; margin-bottom: 8px; color: #e74c3c; }
-      .queyimen-panel p { font-size: 14px; color: #666; margin-bottom: 20px; }
-      .queyimen-options { display: flex; gap: 12px; justify-content: center; }
-      .queyimen-btn {
-        padding: 16px 24px;
-        border: 2px solid #ddd;
-        border-radius: 14px;
-        background: #fff;
-        font-size: 18px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: all 0.15s;
-      }
-      .queyimen-btn:active { transform: scale(0.95); }
-      .queyimen-btn.recommended { border-color: #ff6b9d; background: #fff0f5; }
-    `;
-    document.head.appendChild(style);
+    // No-op: styles moved to css/tiles.css
   }
 
   // ╔═══════════════════════════════════════════════════════════╗
