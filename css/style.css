@@ -153,7 +153,8 @@ body {
 .table-middle {
   display: flex; flex-direction: row; align-items: stretch;
   width: 100%; gap: 2px;
-  min-height: 120px;
+  /* Side players need ~220px for 13 tiles × 15px each */
+  min-height: 220px;
 }
 
 .player-left {
@@ -251,8 +252,8 @@ body {
 .remaining-tiles span { font-size: 20px; font-weight: 900; color: var(--gold); }
 
 .discard-pool {
-  display: flex; flex-wrap: wrap; gap: 1px; justify-content: center;
-  max-width: 240px;
+  display: flex; flex-wrap: wrap; gap: 2px; justify-content: center;
+  width: 100%;
   max-height: 140px;
   overflow-y: auto;
   margin-bottom: 2px;
