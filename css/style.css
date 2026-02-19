@@ -105,8 +105,9 @@ body {
 /* ═══ GAME TABLE ═══ */
 .game-topbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: max(8px, var(--safe-top)) 16px 8px;
+  padding: max(4px, var(--safe-top)) 12px 4px;
   background: rgba(0,0,0,0.05);
+  flex-shrink: 0;
 }
 .icon-btn {
   width: 36px; height: 36px; border-radius: 50%; border: none;
@@ -141,10 +142,10 @@ body {
   box-shadow: 0 4px 16px rgba(0,0,0,0.4), inset 0 0 40px rgba(0,0,0,0.15);
   border: 2px solid #0d4a28;
   padding: 8px;
-  /* Table should be substantial but not stretch to 100% */
+  /* Table fills most of available space */
   min-height: 450px;
-  max-height: calc(100vh - 130px);
-  height: 65vh;
+  max-height: calc(100vh - 100px);
+  height: 80vh;
 }
 
 /* Player areas — no rotation, no absolute positioning */
@@ -386,7 +387,7 @@ body {
   background: linear-gradient(180deg, #0d4a28 0%, #1a3a2a 100%);
   flex-direction: column !important;
   /* Space for fixed action bar at bottom */
-  padding-bottom: 70px;
+  padding-bottom: 60px;
 }
 
 /* ═══ ACCESSIBILITY ═══ */
