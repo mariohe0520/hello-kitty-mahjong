@@ -277,11 +277,16 @@ body {
 .discard-pool {
   display: flex; flex-wrap: wrap; gap: 2px; justify-content: center;
   width: 100%;
+  min-height: 36px;
   max-height: 140px;
   overflow-y: auto;
   margin-bottom: 2px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,0.3) transparent;
+  background: rgba(0,0,0,0.12);
+  border-radius: 8px;
+  padding: 4px;
+  border: 1px dashed rgba(255,255,255,0.1);
 }
 .discard-pool::-webkit-scrollbar { width: 3px; }
 .discard-pool::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 2px; }
