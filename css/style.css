@@ -117,7 +117,7 @@ body {
 .round-info { text-align: center; font-size: 14px; font-weight: 600; }
 
 /* ─── Game layout: CSS Grid (no 3D, no absolute, no rotation) ─── */
-/* ═══ TABLE LAYOUT: Absolute positioning (like real mahjong games) ═══ */
+/* ═══ TABLE LAYOUT: Flexbox rows, compact, centered ═══ */
 .table-container {
   flex: 1; display: flex; align-items: center; justify-content: center;
   padding: 0 4px;
@@ -126,66 +126,56 @@ body {
 }
 
 .mahjong-table {
-  position: relative;
   width: calc(100% - 8px);
   max-width: 420px;
-  /* Square-ish aspect ratio: width determines height */
-  aspect-ratio: 3/4;
-  max-height: calc(100vh - 110px);
+  display: flex;
+  flex-direction: column;
   background:
     radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.06) 0%, transparent 60%),
     radial-gradient(ellipse at center, #1a8a4c, var(--table-green), var(--table-dark));
   border-radius: 16px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.4), inset 0 0 40px rgba(0,0,0,0.15);
   border: 2px solid #0d4a28;
-  overflow: hidden;
+  padding: 6px;
+  gap: 2px;
 }
 
-/* ─── Player areas: absolute positioned at table edges ─── */
+/* ─── Player areas ─── */
 .player-area {
-  position: absolute;
   display: flex; flex-direction: column; align-items: center;
-  overflow: hidden;
+  min-width: 0; min-height: 0; overflow: hidden;
 }
 
-/* Top player: full width at top */
-.player-top {
-  top: 4px; left: 50px; right: 50px;
-  flex-direction: column; align-items: center;
+/* Top row: top player */
+.player-top { width: 100%; }
+
+/* Middle row: left + center + right */
+.table-middle {
+  display: flex; flex-direction: row; align-items: stretch;
+  width: 100%; gap: 2px;
+  min-height: 120px;
 }
 
-/* Bottom player: full width at bottom */
-.player-bottom {
-  bottom: 4px; left: 50px; right: 50px;
-  flex-direction: column; align-items: center;
-}
-
-/* Left player: vertical strip on left */
 .player-left {
-  top: 50px; bottom: 50px; left: 4px;
-  width: 44px;
-  flex-direction: column; align-items: center;
-  justify-content: center;
+  width: 40px; flex-shrink: 0;
+  justify-content: center; align-items: center;
 }
-
-/* Right player: vertical strip on right */
 .player-right {
-  top: 50px; bottom: 50px; right: 4px;
-  width: 44px;
-  flex-direction: column; align-items: center;
-  justify-content: center;
+  width: 40px; flex-shrink: 0;
+  justify-content: center; align-items: center;
 }
 
 /* Center: discards + remaining */
 .table-center {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
+  flex: 1;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center;
-  width: calc(100% - 110px);
-  max-height: calc(100% - 120px);
+  min-height: 100px;
+  overflow: hidden;
 }
+
+/* Bottom row: player's hand */
+.player-bottom { width: 100%; }
 
 .player-label {
   display: flex; align-items: center; gap: 4px;
@@ -230,12 +220,12 @@ body {
 }
 .hand-bottom .tile {
   width: calc((100% - 13px) / 14);
-  min-width: 18px; max-width: 34px;
+  min-width: 18px; max-width: 36px;
   height: auto; aspect-ratio: 3/4;
   min-height: unset;
 }
 
-/* Top hand: opponent tiles */
+/* Top hand: smaller opponent tiles */
 .hand-top .tile { width: 22px; height: 28px; }
 
 /* Side hands: vertical column */
@@ -244,7 +234,7 @@ body {
   max-height: 100%; overflow: hidden;
 }
 .hand-side .tile {
-  width: 36px; height: 14px; min-width: 36px; min-height: 14px;
+  width: 32px; height: 14px; min-width: 32px; min-height: 14px;
   border-radius: 2px; border-width: 1px;
   box-shadow: none;
 }
@@ -252,20 +242,20 @@ body {
 .hand-side .tile::before { display: none; }
 .hand-side .tile::after { display: none; }
 
-/* ─── Discard pool: center of table ─── */
+/* ─── Discard pool ─── */
 .remaining-tiles {
   display: flex; flex-direction: column; align-items: center;
   color: rgba(255,255,255,0.6); font-size: 11px;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 .remaining-tiles span { font-size: 20px; font-weight: 900; color: var(--gold); }
 
 .discard-pool {
   display: flex; flex-wrap: wrap; gap: 1px; justify-content: center;
   max-width: 240px;
-  max-height: 160px;
+  max-height: 140px;
   overflow-y: auto;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,0.3) transparent;
 }

@@ -79,24 +79,27 @@
         <div class="hand hand-top" id="hand-top"></div>
       </div>
 
-      <!-- Left player -->
-      <div class="player-area player-left" id="player-left">
-        <div class="player-label"><img class="player-avatar-img" src="assets/avatars/bunny.svg" alt="🐰" onerror="this.outerHTML='<span class=player-avatar>🐰</span>'"> <span class="player-name">上家</span></div>
-        <div class="hand hand-side" id="hand-left"></div>
-      </div>
+      <!-- Middle row: left + center + right -->
+      <div class="table-middle">
+        <!-- Left player -->
+        <div class="player-area player-left" id="player-left">
+          <div class="player-label"><img class="player-avatar-img" src="assets/avatars/bunny.svg" alt="🐰" onerror="this.outerHTML='<span class=player-avatar>🐰</span>'"> <span class="player-name">上家</span></div>
+          <div class="hand hand-side" id="hand-left"></div>
+        </div>
 
-      <!-- Right player -->
-      <div class="player-area player-right" id="player-right">
-        <div class="player-label"><span class="player-name">下家</span> <img class="player-avatar-img" src="assets/avatars/fox.svg" alt="🦊" onerror="this.outerHTML='<span class=player-avatar>🦊</span>'"></div>
-        <div class="hand hand-side" id="hand-right"></div>
-      </div>
+        <!-- Center area: discard pool + remaining tiles -->
+        <div class="table-center">
+          <div class="discard-pool" id="discard-pool"></div>
+          <div class="remaining-tiles">
+            <span id="tiles-remaining">136</span>
+            <small>余牌</small>
+          </div>
+        </div>
 
-      <!-- Center area: discard pool + remaining tiles -->
-      <div class="table-center">
-        <div class="discard-pool" id="discard-pool"></div>
-        <div class="remaining-tiles">
-          <span id="tiles-remaining">136</span>
-          <small>余牌</small>
+        <!-- Right player -->
+        <div class="player-area player-right" id="player-right">
+          <div class="player-label"><span class="player-name">下家</span> <img class="player-avatar-img" src="assets/avatars/fox.svg" alt="🦊" onerror="this.outerHTML='<span class=player-avatar>🦊</span>'"></div>
+          <div class="hand hand-side" id="hand-right"></div>
         </div>
       </div>
 
