@@ -174,25 +174,21 @@ body {
 .player-score { color: var(--gold); font-weight: 700; }
 .player-name { text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
 
-/* Turn indicator — glow around active player */
-.player-area.active-turn {
-  position: relative;
-}
-.player-area.active-turn::after {
-  content: '▶';
-  position: absolute;
-  font-size: 10px;
-  color: var(--gold);
-  animation: turnPulse 1s ease-in-out infinite;
-}
-.player-top.active-turn::after { top: -2px; right: -14px; }
-.player-bottom.active-turn::after { bottom: 2px; left: -14px; }
-.player-left.active-turn::after { top: -10px; left: 50%; transform: translateX(-50%) rotate(90deg); }
-.player-right.active-turn::after { top: -10px; right: 50%; transform: translateX(50%) rotate(-90deg); }
-@keyframes turnPulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+/* Turn indicator — strong glow around active player */
 .player-area.active-turn .player-label {
   color: var(--gold);
-  text-shadow: 0 0 8px rgba(245,197,24,0.5);
+  background: rgba(245,197,24,0.2);
+  border-radius: 8px;
+  padding: 2px 8px;
+  text-shadow: 0 0 8px rgba(245,197,24,0.6);
+  animation: turnGlow 1.2s ease-in-out infinite;
+}
+.player-area.active-turn .hand {
+  filter: drop-shadow(0 0 6px rgba(245,197,24,0.4));
+}
+@keyframes turnGlow {
+  0%,100% { box-shadow: 0 0 4px rgba(245,197,24,0.3); }
+  50% { box-shadow: 0 0 12px rgba(245,197,24,0.6); }
 }
 
 /* Hands */
@@ -354,6 +350,7 @@ body {
 /* ═══ GAME PAGE LAYOUT ═══ */
 #game {
   background: linear-gradient(180deg, #0d4a28 0%, #1a3a2a 100%);
+  flex-direction: column !important;
 }
 
 /* ═══ ACCESSIBILITY ═══ */
