@@ -176,6 +176,12 @@ body {
   text-align: center;
   min-height: 100px;
   overflow: hidden;
+  /* Subtle bordered area for discards */
+  background: rgba(0,0,0,0.08);
+  border-radius: 10px;
+  margin: 4px;
+  padding: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
 }
 
 /* Bottom row: player's hand */
@@ -265,7 +271,7 @@ body {
 }
 .discard-pool::-webkit-scrollbar { width: 3px; }
 .discard-pool::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 2px; }
-.discard-pool .tile { width: 20px; height: 26px; font-size: 10px; cursor: default; flex-shrink: 0; }
+.discard-pool .tile { width: 24px; height: 30px; font-size: 11px; cursor: default; flex-shrink: 0; }
 
 /* ═══ ACTION BAR: Fixed at bottom, always clickable ═══ */
 .action-bar {
