@@ -161,12 +161,14 @@ body {
 }
 
 .player-left {
-  width: 40px; flex-shrink: 0;
+  width: 44px; flex-shrink: 0;
   justify-content: center; align-items: center;
+  padding: 4px 2px;
 }
 .player-right {
-  width: 40px; flex-shrink: 0;
+  width: 44px; flex-shrink: 0;
   justify-content: center; align-items: center;
+  padding: 4px 2px;
 }
 
 /* Center: discards + remaining */
@@ -230,7 +232,7 @@ body {
 }
 .hand-bottom .tile {
   width: calc((100% - 13px) / 14);
-  min-width: 18px; max-width: 36px;
+  min-width: 20px; max-width: 38px;
   height: auto; aspect-ratio: 3/4;
   min-height: unset;
 }
@@ -244,7 +246,7 @@ body {
   max-height: 100%; overflow: hidden;
 }
 .hand-side .tile {
-  width: 32px; height: 14px; min-width: 32px; min-height: 14px;
+  width: 36px; height: 14px; min-width: 36px; min-height: 14px;
   border-radius: 2px; border-width: 1px;
   box-shadow: none;
 }
