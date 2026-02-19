@@ -117,7 +117,7 @@ body {
 
 /* ─── Game layout: CSS Grid (no 3D, no absolute, no rotation) ─── */
 .table-container {
-  flex: 1; display: flex; align-items: stretch; justify-content: center;
+  flex: 1; display: flex; align-items: center; justify-content: center;
   padding: 4px 8px;
   overflow: hidden;
   min-height: 0;
@@ -128,7 +128,7 @@ body {
   max-width: 420px;
   display: grid;
   grid-template-columns: 44px 1fr 44px;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto minmax(120px, auto) auto;
   grid-template-areas:
     "left  top    right"
     "left  center right"
@@ -142,7 +142,7 @@ body {
   border: 2px solid #0d4a28;
   padding: 8px;
   min-height: 0;
-  height: 100%;
+  /* Natural height, don't force stretch */
   max-height: calc(100vh - 120px);
 }
 
