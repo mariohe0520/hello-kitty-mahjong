@@ -1,0 +1,177 @@
+/* ═══════════════════════════════════════════════════════════════
+   Hello Kitty 麻将 — 麻将牌样式
+   3D tiles with cute Hello Kitty twist
+   ═══════════════════════════════════════════════════════════════ */
+
+.tile {
+  width: 36px;
+  height: 48px;
+  background: linear-gradient(180deg, #fff 0%, #f8f4e8 60%, #e8e0c8 100%);
+  border: 1px solid #c8c0a8;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow:
+    0 2px 0 #b8b098,
+    0 3px 6px rgba(0,0,0,0.2);
+  user-select: none;
+  -webkit-user-select: none;
+  transform-style: preserve-3d;
+}
+
+/* 3D depth effect */
+.tile::before {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 1px;
+  right: 1px;
+  height: 4px;
+  background: linear-gradient(180deg, #d4c8a0, #b8a880);
+  border-radius: 0 0 5px 5px;
+  z-index: -1;
+}
+
+.tile:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #b8b098, 0 1px 3px rgba(0,0,0,0.15);
+}
+
+/* Selected tile */
+.tile.selected {
+  transform: translateY(-8px);
+  box-shadow:
+    0 8px 0 #b8b098,
+    0 12px 20px rgba(255,107,157,0.3);
+  border-color: var(--pink);
+}
+
+/* Face down tile */
+.tile.face-down {
+  background: linear-gradient(135deg, #ff6b9d 0%, #ff8fbf 50%, #ffb3d9 100%);
+  border-color: #e55a8a;
+}
+
+.tile.face-down::before {
+  background: linear-gradient(180deg, #e55a8a, #c04878);
+}
+
+.tile-back {
+  font-size: 16px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+}
+
+/* Tile content */
+.tile-rank {
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.tile-suit {
+  font-size: 9px;
+  line-height: 1;
+  margin-top: 1px;
+  opacity: 0.8;
+}
+
+.tile-honor {
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* Small tiles (for opponents / discard) */
+.tile-sm {
+  width: 24px;
+  height: 32px;
+}
+
+.tile-sm .tile-rank {
+  font-size: 13px;
+}
+
+.tile-sm .tile-suit {
+  font-size: 7px;
+}
+
+.tile-sm .tile-honor {
+  font-size: 14px;
+}
+
+.tile-sm::before {
+  height: 3px;
+}
+
+/* Tile entrance animation */
+@keyframes tileEnter {
+  0% {
+    transform: translateY(-30px) rotateX(90deg);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(3px) rotateX(-5deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) rotateX(0);
+  }
+}
+
+.tile.entering {
+  animation: tileEnter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Tile discard animation */
+@keyframes tileDiscard {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.8) translateY(-20px);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(0.6) translateY(0);
+    opacity: 1;
+  }
+}
+
+.tile.discarding {
+  animation: tileDiscard 0.3s ease-out forwards;
+}
+
+/* Win tile glow */
+.tile.winning {
+  animation: winGlow 1s ease-in-out infinite;
+  border-color: var(--gold) !important;
+}
+
+@keyframes winGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(245,197,24,0.4), 0 2px 0 #b8b098; }
+  50% { box-shadow: 0 0 20px rgba(245,197,24,0.8), 0 2px 0 #b8b098; }
+}
+
+/* Peng/Gang highlight */
+.tile.locked {
+  opacity: 0.9;
+  border-color: #a0a0a0;
+  cursor: default;
+}
+
+/* Hover effect for playable tiles */
+@media (hover: hover) {
+  .tile:hover:not(.face-down):not(.locked) {
+    transform: translateY(-4px);
+    box-shadow:
+      0 6px 0 #b8b098,
+      0 8px 16px rgba(0,0,0,0.15);
+  }
+}
