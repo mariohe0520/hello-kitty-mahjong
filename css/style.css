@@ -149,8 +149,8 @@ body {
   min-width: 0; min-height: 0; overflow: visible;
 }
 
-/* Top row: top player */
-.player-top { width: 100%; }
+/* Top row: top player — extends beyond table padding */
+.player-top { width: calc(100% + 12px); margin: 0 -6px; }
 
 /* Middle row: left + center + right */
 .table-middle {
@@ -190,8 +190,8 @@ body {
   border: 1px solid rgba(255,255,255,0.06);
 }
 
-/* Bottom row: player's hand */
-.player-bottom { width: 100%; }
+/* Bottom row: player's hand — extends beyond table padding for bigger tiles */
+.player-bottom { width: calc(100% + 12px); margin: 0 -6px; }
 
 .player-label {
   display: flex; align-items: center; gap: 4px;
