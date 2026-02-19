@@ -1480,6 +1480,7 @@ const Game = (() => {
 
     showActionText('吃！', '#5b9bd5');
     Sound.playChi();
+    if (playerIndex === 0 && typeof Stats !== 'undefined') Stats.recordAction('chi');
 
     const player = state.players[playerIndex];
 
@@ -1534,6 +1535,7 @@ const Game = (() => {
     showActionText('碰！', '#2ecc71');
     Sound.playPeng();
     Anim.screenShake(4, 300);
+    if (playerIndex === 0 && typeof Stats !== 'undefined') Stats.recordAction('peng');
 
     const player = state.players[playerIndex];
 
@@ -1586,6 +1588,7 @@ const Game = (() => {
     showActionText('杠！', '#9b59b6');
     Sound.playGang();
     Anim.screenShake(6, 400);
+    if (playerIndex === 0 && typeof Stats !== 'undefined') Stats.recordAction('gang');
 
     const player = state.players[playerIndex];
 
@@ -1804,6 +1807,29 @@ const Game = (() => {
     state.winners.push(playerIndex);
 
     updateScoreDisplay();
+
+    // ── BIG score change animation ──
+    const scoreEl = document.getElementById('my-score');
+    if (scoreEl) {
+      scoreEl.style.transition = 'transform 0.3s, color 0.3s';
+      scoreEl.style.transform = 'scale(1.5)';
+      scoreEl.style.color = playerIndex === 0 ? '#22c55e' : '#ef4444';
+      setTimeout(() => {
+        scoreEl.style.transform = 'scale(1)';
+        scoreEl.style.color = '';
+      }, 1500);
+    }
+
+    // Record stats
+    if (typeof Stats !== 'undefined') {
+      if (playerIndex === 0) {
+        const handType = isTsumo ? 'zimo' : null;
+        Stats.recordWin(state.mode, points, handType);
+      } else {
+        Stats.recordLoss();
+      }
+    }
+
     await wait(700);
 
     // Show win screen

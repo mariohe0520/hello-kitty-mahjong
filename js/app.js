@@ -144,12 +144,37 @@ const App = (() => {
     // Initialize Audio context on user gesture
     try { Game.Sound.getCtx(); } catch(e) {}
 
+    // Record login + game start for stats
+    if (typeof Stats !== 'undefined') {
+      Stats.recordLogin();
+      const newAchievements = Stats.recordGameStart();
+      if (newAchievements.length) {
+        setTimeout(() => showAchievementToast(newAchievements[0]), 2000);
+      }
+    }
+
     navigateTo('game');
 
     // Small delay for transition, then start game
     setTimeout(() => {
       Game.startGame(mode);
     }, 400);
+  }
+
+  function showAchievementToast(achievement) {
+    const toast = document.createElement('div');
+    toast.innerHTML = `<span style="font-size:28px">${achievement.icon}</span><div><b>🏅 成就解锁！</b><br>${achievement.name}</div>`;
+    toast.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-20px);background:rgba(30,20,50,0.95);color:#fff;padding:12px 20px;border-radius:14px;display:flex;align-items:center;gap:12px;z-index:10000;box-shadow:0 4px 20px rgba(245,197,24,0.3);border:1px solid rgba(245,197,24,0.4);opacity:0;transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1);font-size:14px;';
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => {
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateX(-50%) translateY(0)';
+    });
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(-50%) translateY(-20px)';
+      setTimeout(() => toast.remove(), 400);
+    }, 3000);
   }
 
   function showTutorial() {
