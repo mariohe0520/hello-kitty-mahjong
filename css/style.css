@@ -123,24 +123,24 @@ body {
 }
 
 .mahjong-table {
-  width: 100%; max-width: 420px;
+  width: 100%;
   display: grid;
-  grid-template-columns: 36px 1fr 36px;
+  grid-template-columns: 28px 1fr 28px;
   grid-template-rows: auto 1fr auto;
   grid-template-areas:
     ".     top    ."
     "left  center right"
     ".     bottom .";
-  gap: 2px;
+  gap: 4px;
   background:
     radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.06) 0%, transparent 60%),
     radial-gradient(ellipse at center, #1a8a4c, var(--table-green), var(--table-dark));
   border-radius: 16px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.4), inset 0 0 40px rgba(0,0,0,0.15);
   border: 2px solid #0d4a28;
-  padding: 6px;
+  padding: 8px;
   min-height: 0;
-  max-height: calc(100vh - 120px);
+  max-height: calc(100vh - 100px);
 }
 
 /* Player areas — no rotation, no absolute positioning */
@@ -177,26 +177,32 @@ body {
 /* Hands */
 .hand { display: flex; gap: 2px; justify-content: center; }
 .hand-bottom {
-  gap: 3px;
+  gap: 1px;
   flex-wrap: nowrap;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
   padding: 4px 0;
   max-width: 100%;
-  scrollbar-width: none; /* Firefox */
+  justify-content: center;
 }
-.hand-bottom::-webkit-scrollbar { display: none; }
+/* Auto-shrink tiles to fit: 14 tiles must fit in available width */
+.hand-bottom .tile {
+  width: calc((100% - 13px) / 14);
+  min-width: 20px;
+  max-width: 36px;
+  height: auto;
+  aspect-ratio: 3/4;
+  min-height: unset;
+}
 .hand-side {
   flex-direction: column; gap: 1px;
   max-height: 100%; overflow: hidden;
 }
-/* Side tiles: tiny to fit vertically */
+/* Side tiles: compact horizontal bars */
 .hand-side .tile {
-  width: 20px; height: 14px; min-width: 20px; min-height: 14px;
-  border-radius: 3px; border-width: 1px;
-  box-shadow: 0 1px 0 #b8a880;
+  width: 22px; height: 12px; min-width: 22px; min-height: 12px;
+  border-radius: 2px; border-width: 1px;
+  box-shadow: none;
 }
-.hand-side .tile .tile-back { font-size: 8px; }
+.hand-side .tile .tile-back { font-size: 7px; }
 .hand-side .tile::before { display: none; }
 .hand-top .tile { width: 24px; height: 32px; }
 
