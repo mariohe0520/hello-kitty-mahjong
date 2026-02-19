@@ -235,10 +235,18 @@ body {
   max-width: 100%; justify-content: center;
 }
 .hand-bottom .tile {
-  width: calc((100% - 13px) / 14);
-  min-width: 20px; max-width: 38px;
+  width: 28px; min-width: 28px; max-width: 38px;
   height: auto; aspect-ratio: 3/4;
   min-height: unset;
+  /* Slight overlap like real mahjong — tiles overlap by ~2px */
+  margin-right: -3px;
+  position: relative;
+}
+.hand-bottom .tile:last-child { margin-right: 0; }
+.hand-bottom .tile.selected {
+  transform: translateY(-8px);
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(245,197,24,0.5);
 }
 
 /* Top hand: smaller opponent tiles */
