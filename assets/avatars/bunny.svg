@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="bgp" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e8d5f5"/>
+      <stop offset="100%" stop-color="#c39bd3"/>
+    </radialGradient>
+    <radialGradient id="bface" cx="45%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f5f0f8"/>
+    </radialGradient>
+  </defs>
+  <!-- Background -->
+  <circle cx="128" cy="128" r="120" fill="url(#bgp)"/>
+  <circle cx="128" cy="128" r="120" fill="none" stroke="#9b59b6" stroke-width="3" opacity="0.3"/>
+  <!-- Long ears -->
+  <ellipse cx="100" cy="50" rx="18" ry="50" fill="url(#bface)" stroke="#e0d0e0" stroke-width="1.5" transform="rotate(-8 100 50)"/>
+  <ellipse cx="156" cy="50" rx="18" ry="50" fill="url(#bface)" stroke="#e0d0e0" stroke-width="1.5" transform="rotate(8 156 50)"/>
+  <!-- Ear inner -->
+  <ellipse cx="100" cy="48" rx="10" ry="35" fill="#f0c0d8" opacity="0.5" transform="rotate(-8 100 48)"/>
+  <ellipse cx="156" cy="48" rx="10" ry="35" fill="#f0c0d8" opacity="0.5" transform="rotate(8 156 48)"/>
+  <!-- Face -->
+  <ellipse cx="128" cy="150" rx="70" ry="65" fill="url(#bface)" stroke="#e0d0e0" stroke-width="1.5"/>
+  <!-- Eyes -->
+  <ellipse cx="107" cy="140" rx="7" ry="9" fill="#333"/>
+  <ellipse cx="149" cy="140" rx="7" ry="9" fill="#333"/>
+  <ellipse cx="109" cy="138" rx="2.5" ry="3" fill="#fff"/>
+  <ellipse cx="151" cy="138" rx="2.5" ry="3" fill="#fff"/>
+  <!-- Nose -->
+  <ellipse cx="128" cy="158" rx="5" ry="4" fill="#ffb0c8"/>
+  <!-- Mouth (bunny Y-shape) -->
+  <line x1="128" y1="162" x2="128" y2="170" stroke="#dda0b0" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M120,170 Q128,177 136,170" fill="none" stroke="#dda0b0" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Blush -->
+  <ellipse cx="92" cy="158" rx="11" ry="7" fill="#ffb3d9" opacity="0.45"/>
+  <ellipse cx="164" cy="158" rx="11" ry="7" fill="#ffb3d9" opacity="0.45"/>
+  <!-- Whiskers -->
+  <line x1="60" y1="150" x2="98" y2="155" stroke="#d0c0d0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="60" y1="162" x2="98" y2="162" stroke="#d0c0d0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="196" y1="150" x2="158" y2="155" stroke="#d0c0d0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="196" y1="162" x2="158" y2="162" stroke="#d0c0d0" stroke-width="1.2" stroke-linecap="round"/>
+</svg>

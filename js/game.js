@@ -680,13 +680,15 @@ const Game = (() => {
     div.dataset.key = tile.key;
 
     if (faceDown) {
-      // Use real Back.svg
+      // Use custom Hello Kitty back design
       const img = document.createElement('img');
-      img.src = `${TILE_ASSET_BASE}Back.svg`;
+      img.src = `${TILE_ASSET_BASE}custom-back.svg`;
       img.className = 'tile-img tile-img-back';
       img.alt = 'back';
       img.draggable = false;
       img.loading = 'lazy';
+      // Fallback to original Back.svg if custom fails
+      img.onerror = function() { this.src = `${TILE_ASSET_BASE}Back.svg`; this.onerror = null; };
       div.appendChild(img);
     } else {
       // Use real tile face SVG
@@ -1032,6 +1034,7 @@ const Game = (() => {
       lastDiscardPlayer: -1,
       turnPhase: 'idle',    // idle, draw, discard, action, waiting
       selectedTile: null,
+      lastDrawnTile: null,  // Track the tile just drawn for tsumo detection
       gameOver: false,
       winners: [],
     };
@@ -1084,6 +1087,15 @@ const Game = (() => {
     const roundEl = document.getElementById('round-number');
     if (windEl) windEl.textContent = windNames[state.roundWind] || '东风';
     if (roundEl) roundEl.textContent = `第${state.round}局`;
+    updateScoreDisplay();
+  }
+
+  function updateScoreDisplay() {
+    if (!state) return;
+    const scoreEl = document.getElementById('my-score');
+    if (scoreEl) {
+      scoreEl.textContent = state.players[0].score.toLocaleString();
+    }
   }
 
   // ─── Deal tiles with cascade animation ───
@@ -1279,6 +1291,7 @@ const Game = (() => {
     state.drawIndex++;
     state.players[playerIndex].hand.push(tile);
     state.players[playerIndex].hand = TileUtils.sortHand(state.players[playerIndex].hand);
+    state.lastDrawnTile = tile;
 
     updateRemainingTiles();
 
@@ -1401,11 +1414,8 @@ const Game = (() => {
     const player = state.players[playerIndex];
 
     // Check for tsumo (self-draw win)
-    const huResult = rules.checkCanHu(
-      player.hand.slice(0, -1),
-      drawn,
-      player.melds
-    );
+    // Hand already includes drawn tile (14 tiles), so check the full hand directly
+    const huResult = rules.checkWin(player.hand, player.melds);
 
     if (player.isHuman) {
       // Render hand with new tile
@@ -1813,10 +1823,8 @@ const Game = (() => {
     const replacement = drawTileFromEnd(playerIndex);
     if (!replacement) return;
 
-    // Check tsumo on replacement
-    const huResult = rules.checkCanHu(
-      player.hand.slice(0, -1), replacement, player.melds
-    );
+    // Check tsumo on replacement (hand already includes the replacement tile)
+    const huResult = rules.checkWin(player.hand, player.melds);
 
     if (player.isHuman) {
       renderHand(playerIndex);
@@ -1976,8 +1984,10 @@ const Game = (() => {
     }
 
     // Calculate score
+    // For tsumo, hand already has 14 tiles; for ron, add the win tile
+    const handForScoring = isTsumo ? [...player.hand] : [...player.hand, winTile];
     const scoreResult = rules.calculateScore(
-      [...player.hand],
+      handForScoring,
       player.melds,
       winTile,
       {
@@ -2006,6 +2016,7 @@ const Game = (() => {
     player.hasWon = true;
     state.winners.push(playerIndex);
 
+    updateScoreDisplay();
     await wait(700);
 
     // Show win screen
@@ -2013,6 +2024,15 @@ const Game = (() => {
   }
 
   // ─── Show win screen ───
+  // Avatar map: player index → SVG path
+  const AVATAR_MAP = {
+    0: 'assets/avatars/kitty.svg',
+    1: 'assets/avatars/fox.svg',
+    2: 'assets/avatars/bear.svg',
+    3: 'assets/avatars/bunny.svg',
+  };
+  const AVATAR_FALLBACK = { 0: '🎀', 1: '🦊', 2: '🐻', 3: '🐰' };
+
   function showWinScreen(playerIndex, scoreResult, isTsumo) {
     const player = state.players[playerIndex];
     const modal = document.getElementById('win-screen');
@@ -2025,10 +2045,15 @@ const Game = (() => {
       modal.style.opacity = '1';
     });
 
-    // Win title
+    // Win title with avatar image
     const title = modal.querySelector('.win-title');
     if (title) {
-      title.textContent = player.isHuman ? '🎉 胡牌！' : `${player.avatar} ${player.name} 胡牌！`;
+      if (player.isHuman) {
+        title.textContent = '🎉 胡牌！';
+      } else {
+        const avatarSrc = AVATAR_MAP[playerIndex] || '';
+        title.innerHTML = `<img src="${avatarSrc}" style="width:36px;height:36px;border-radius:50%;vertical-align:middle;margin-right:6px;" onerror="this.outerHTML='${player.avatar}'"> ${player.name} 胡牌！`;
+      }
     }
 
     // Render winning hand
@@ -2095,12 +2120,16 @@ const Game = (() => {
   function handleDrawGame() {
     state.gameOver = true;
     state.turnPhase = 'idle';
+    hideActionBar();
 
     showActionText('流局', '#95a5a6');
 
-    // Flip all tiles face up
+    // Reveal all hands face up (temporarily mark all as human for rendering)
     for (let p = 0; p < 4; p++) {
+      const wasHuman = state.players[p].isHuman;
+      state.players[p].isHuman = true;
       renderHand(p, true);
+      state.players[p].isHuman = wasHuman;
     }
 
     setTimeout(() => {
@@ -2155,8 +2184,43 @@ const Game = (() => {
     const options = rules.canChi(state.players[0].hand, tile, 0, state.lastDiscardPlayer);
     if (options.length === 0) return;
 
-    // If multiple options, use the first one (TODO: show picker)
-    handleChi(0, tile, options[0], state.lastDiscardPlayer);
+    if (options.length === 1) {
+      handleChi(0, tile, options[0], state.lastDiscardPlayer);
+    } else {
+      // Show chi option picker
+      showChiPicker(tile, options);
+    }
+  }
+
+  function showChiPicker(tile, options) {
+    const overlay = document.createElement('div');
+    overlay.className = 'queyimen-overlay';
+    overlay.style.zIndex = '450';
+
+    const optionsHtml = options.map((opt, i) => {
+      const ranks = opt.sort((a, b) => a - b);
+      const display = ranks.map(r => `${r}${TILE_SUITS[tile.suit]?.name || ''}`).join(' ');
+      return `<button class="queyimen-btn" data-idx="${i}" style="font-size:16px;min-width:80px;">${display}</button>`;
+    }).join('');
+
+    overlay.innerHTML = `
+      <div class="queyimen-panel">
+        <h3>选择吃牌组合</h3>
+        <p>选择要组成的顺子</p>
+        <div class="queyimen-options">${optionsHtml}</div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelectorAll('.queyimen-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.idx);
+        overlay.remove();
+        Sound.playTap();
+        handleChi(0, tile, options[idx], state.lastDiscardPlayer);
+      });
+    });
   }
 
   function peng() {
@@ -2200,10 +2264,10 @@ const Game = (() => {
     const player = state.players[0];
     const tile = state.lastDiscard;
 
-    // Tsumo
+    // Tsumo (self-draw win)
     if (state.currentPlayer === 0 && player.hand.length === 14) {
-      const lastTile = player.hand[player.hand.length - 1];
-      handleHu(0, lastTile, true);
+      const winTile = state.lastDrawnTile || player.hand[player.hand.length - 1];
+      handleHu(0, winTile, true);
       return;
     }
 

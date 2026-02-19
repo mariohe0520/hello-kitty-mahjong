@@ -75,19 +75,19 @@
     <div class="mahjong-table" id="mahjong-table">
       <!-- Top player (opponent/AI) -->
       <div class="player-area player-top" id="player-top">
-        <div class="player-label"><span class="player-name">对家</span> <span class="player-avatar">🐻</span></div>
+        <div class="player-label"><span class="player-name">对家</span> <img class="player-avatar-img" src="assets/avatars/bear.svg" alt="🐻" onerror="this.outerHTML='<span class=player-avatar>🐻</span>'"></div>
         <div class="hand hand-top" id="hand-top"></div>
       </div>
 
       <!-- Left player -->
       <div class="player-area player-left" id="player-left">
-        <div class="player-label"><span class="player-avatar">🐰</span> <span class="player-name">上家</span></div>
+        <div class="player-label"><img class="player-avatar-img" src="assets/avatars/bunny.svg" alt="🐰" onerror="this.outerHTML='<span class=player-avatar>🐰</span>'"> <span class="player-name">上家</span></div>
         <div class="hand hand-side" id="hand-left"></div>
       </div>
 
       <!-- Right player -->
       <div class="player-area player-right" id="player-right">
-        <div class="player-label"><span class="player-name">下家</span> <span class="player-avatar">🦊</span></div>
+        <div class="player-label"><span class="player-name">下家</span> <img class="player-avatar-img" src="assets/avatars/fox.svg" alt="🦊" onerror="this.outerHTML='<span class=player-avatar>🦊</span>'"></div>
         <div class="hand hand-side" id="hand-right"></div>
       </div>
 
@@ -104,7 +104,7 @@
       <div class="player-area player-bottom" id="player-bottom">
         <div class="hand hand-bottom" id="hand-bottom"></div>
         <div class="player-label">
-          <span class="player-avatar">🎀</span>
+          <img class="player-avatar-img" src="assets/avatars/kitty.svg" alt="🎀" onerror="this.outerHTML='<span class=player-avatar>🎀</span>'">
           <span class="player-name">我</span>
           <span class="player-score" id="my-score">25000</span>
         </div>

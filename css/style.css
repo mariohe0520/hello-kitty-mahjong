@@ -68,6 +68,10 @@ body {
 /* ═══ MENU ═══ */
 #menu {
   background: linear-gradient(180deg, #fff0f5 0%, #ffe0ec 100%);
+  background-image: url('../assets/bg/menu-bg.svg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   padding: max(20px, var(--safe-top)) 16px var(--safe-bottom);
   align-items: center;
 }
@@ -119,9 +123,12 @@ body {
 
 .mahjong-table {
   width: 100%; max-width: 420px; aspect-ratio: 1;
-  background: radial-gradient(ellipse at center, #1a8a4c, var(--table-green), var(--table-dark));
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at center, #1a8a4c, var(--table-green), var(--table-dark));
   border-radius: 20px; position: relative;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.1);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.1),
+    inset 0 0 60px rgba(0,0,0,0.15);
   border: 3px solid #0d4a28;
   transform: rotateX(8deg);
   transform-style: preserve-3d;
@@ -139,6 +146,13 @@ body {
   font-size: 12px; color: rgba(255,255,255,0.8); font-weight: 600;
 }
 .player-avatar { font-size: 20px; }
+.player-avatar-img {
+  width: 28px; height: 28px; border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  border: 1.5px solid rgba(255,255,255,0.5);
+  vertical-align: middle;
+}
 .player-score { color: var(--gold); font-weight: 700; }
 .player-name { text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
 
@@ -213,3 +227,58 @@ body {
 .win-hand { margin: 16px 0; }
 .win-score { font-size: 24px; font-weight: 700; color: var(--gold); margin: 8px 0; }
 .win-fans { font-size: 14px; color: #666; margin-bottom: 20px; }
+
+/* ═══ MOBILE RESPONSIVE ═══ */
+@media (max-width: 375px) {
+  /* iPhone SE and smaller — 320px logical */
+  .tile { width: 28px; height: 38px; border-radius: 4px; }
+  .tile-sm { width: 18px; height: 24px; }
+  .tile-mini { width: 14px !important; height: 18px !important; }
+  .hand-bottom { gap: 1px; }
+  .hand { gap: 1px; }
+  .discard-pool .tile { width: 16px; height: 20px; }
+  .discard-pool { max-width: 140px; }
+  .mahjong-table { max-width: 340px; }
+  .menu-btn { padding: 12px 16px; font-size: 14px; }
+  .btn-icon { font-size: 22px; }
+  .player-avatar-img { width: 22px; height: 22px; }
+  .action-btn { padding: 8px 14px; font-size: 14px; }
+  .btn-hu { font-size: 16px; padding: 8px 20px; }
+}
+
+@media (max-width: 320px) {
+  /* Absolute minimum */
+  .tile { width: 24px; height: 32px; }
+  .tile-sm { width: 16px; height: 22px; }
+  .hand-bottom { gap: 0px; }
+  .mahjong-table { max-width: 300px; }
+}
+
+@media (min-width: 768px) {
+  /* Tablet/Desktop */
+  .mahjong-table { max-width: 560px; }
+  .tile { width: 42px; height: 56px; }
+  .discard-pool .tile { width: 24px; height: 32px; }
+  .discard-pool { max-width: 240px; }
+}
+
+/* ═══ GAME PAGE LAYOUT ═══ */
+#game {
+  background: linear-gradient(180deg, #0d4a28 0%, #1a3a2a 100%);
+}
+
+/* ═══ ACCESSIBILITY ═══ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ═══ LANDSCAPE HINT ═══ */
+@media (max-height: 500px) and (orientation: landscape) {
+  .table-container { padding: 2px; }
+  .game-topbar { padding-top: 4px; padding-bottom: 4px; }
+  .action-bar { padding: 6px 16px; }
+  .mahjong-table { transform: rotateX(0); }
+}

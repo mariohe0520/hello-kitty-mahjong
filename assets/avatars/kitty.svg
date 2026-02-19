@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffc0d9"/>
+      <stop offset="100%" stop-color="#ff8fbf"/>
+    </radialGradient>
+    <radialGradient id="face" cx="45%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f8f0f0"/>
+    </radialGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="128" cy="128" r="120" fill="url(#bg)"/>
+  <circle cx="128" cy="128" r="120" fill="none" stroke="#ff6b9d" stroke-width="3" opacity="0.5"/>
+  <!-- Ears -->
+  <polygon points="60,55 85,100 45,105" fill="url(#face)" stroke="#e0d0d0" stroke-width="1.5"/>
+  <polygon points="196,55 171,100 211,105" fill="url(#face)" stroke="#e0d0d0" stroke-width="1.5"/>
+  <!-- Ear inner -->
+  <polygon points="65,65 82,95 52,99" fill="#ffd5e5" opacity="0.4"/>
+  <polygon points="191,65 174,95 204,99" fill="#ffd5e5" opacity="0.4"/>
+  <!-- Face -->
+  <ellipse cx="128" cy="140" rx="75" ry="68" fill="url(#face)" stroke="#e0d0d0" stroke-width="1.5"/>
+  <!-- Eyes -->
+  <ellipse cx="105" cy="132" rx="7" ry="8" fill="#333"/>
+  <ellipse cx="151" cy="132" rx="7" ry="8" fill="#333"/>
+  <ellipse cx="107" cy="130" rx="2.5" ry="3" fill="#fff"/>
+  <ellipse cx="153" cy="130" rx="2.5" ry="3" fill="#fff"/>
+  <!-- Nose -->
+  <ellipse cx="128" cy="148" rx="5" ry="3.5" fill="#ff9dbd"/>
+  <!-- Whiskers -->
+  <line x1="55" y1="135" x2="95" y2="142" stroke="#ccc" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="55" y1="148" x2="95" y2="148" stroke="#ccc" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="55" y1="161" x2="95" y2="155" stroke="#ccc" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="201" y1="135" x2="161" y2="142" stroke="#ccc" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="201" y1="148" x2="161" y2="148" stroke="#ccc" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="201" y1="161" x2="161" y2="155" stroke="#ccc" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Bow -->
+  <ellipse cx="173" cy="72" rx="22" ry="16" fill="#ff6b9d" transform="rotate(-15 173 72)"/>
+  <ellipse cx="199" cy="68" rx="22" ry="16" fill="#ff6b9d" transform="rotate(15 199 68)"/>
+  <circle cx="186" cy="72" r="7" fill="#e55a8a"/>
+  <circle cx="186" cy="72" r="3" fill="#ffb3d9"/>
+  <!-- Mouth -->
+  <path d="M120,158 Q128,165 136,158" fill="none" stroke="#e0a0a0" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Blush -->
+  <ellipse cx="95" cy="155" rx="10" ry="6" fill="#ffb3d9" opacity="0.5"/>
+  <ellipse cx="161" cy="155" rx="10" ry="6" fill="#ffb3d9" opacity="0.5"/>
+</svg>
