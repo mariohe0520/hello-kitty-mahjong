@@ -138,6 +138,8 @@ body {
   border: 2px solid #0d4a28;
   padding: 6px;
   gap: 2px;
+  /* Fill 70% of viewport height for substantial table */
+  min-height: min(70vh, calc(100vh - 120px));
 }
 
 /* ─── Player areas ─── */
@@ -153,8 +155,9 @@ body {
 .table-middle {
   display: flex; flex-direction: row; align-items: stretch;
   width: 100%; gap: 2px;
-  /* Side players need ~220px for 13 tiles × 15px each */
-  min-height: 220px;
+  /* Expand to fill available table height */
+  flex: 1;
+  min-height: 200px;
 }
 
 .player-left {
