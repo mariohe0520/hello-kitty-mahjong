@@ -117,15 +117,17 @@ body {
 
 /* ─── Game layout: CSS Grid (no 3D, no absolute, no rotation) ─── */
 .table-container {
-  flex: 1; display: flex; align-items: center; justify-content: center;
-  padding: 4px;
+  flex: 1; display: flex; align-items: stretch; justify-content: center;
+  padding: 4px 8px;
   overflow: hidden;
+  min-height: 0;
 }
 
 .mahjong-table {
   width: 100%;
+  max-width: 420px;
   display: grid;
-  grid-template-columns: 28px 1fr 28px;
+  grid-template-columns: 36px 1fr 36px;
   grid-template-rows: auto 1fr auto;
   grid-template-areas:
     ".     top    ."
@@ -140,7 +142,9 @@ body {
   border: 2px solid #0d4a28;
   padding: 8px;
   min-height: 0;
-  max-height: calc(100vh - 100px);
+  /* Fill most of available height */
+  height: 100%;
+  max-height: calc(100vh - 120px);
 }
 
 /* Player areas — no rotation, no absolute positioning */
@@ -213,13 +217,13 @@ body {
   flex-direction: column; gap: 1px;
   max-height: 100%; overflow: hidden;
 }
-/* Side tiles: compact horizontal bars */
+/* Side tiles: compact horizontal bars — wider for visibility */
 .hand-side .tile {
-  width: 22px; height: 12px; min-width: 22px; min-height: 12px;
-  border-radius: 2px; border-width: 1px;
-  box-shadow: none;
+  width: 30px; height: 14px; min-width: 30px; min-height: 14px;
+  border-radius: 3px; border-width: 1px;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.15);
 }
-.hand-side .tile .tile-back { font-size: 7px; }
+.hand-side .tile .tile-back { font-size: 8px; }
 .hand-side .tile::before { display: none; }
 .hand-side .tile::after { display: none; }
 .hand-top .tile { width: 24px; height: 32px; }
@@ -246,9 +250,13 @@ body {
 /* ═══ ACTION BAR ═══ */
 .action-bar {
   display: flex; gap: 8px; justify-content: center;
-  padding: 12px 16px calc(12px + var(--safe-bottom));
+  padding: 10px 16px calc(16px + var(--safe-bottom));
   background: rgba(255,255,255,0.95);
   box-shadow: 0 -2px 12px rgba(0,0,0,0.1);
+  /* Ensure visible above any browser chrome */
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+  position: relative;
+  z-index: 10;
 }
 .action-btn {
   padding: 10px 20px; border: none; border-radius: 12px;
@@ -311,7 +319,7 @@ body {
   .hand { gap: 1px; }
   .discard-pool .tile { width: 16px; height: 20px; }
   .discard-pool { max-width: 140px; }
-  .mahjong-table { max-width: 360px; }
+  .mahjong-table { max-width: 340px; }
   .menu-btn { padding: 12px 16px; font-size: 14px; }
   .btn-icon { font-size: 22px; }
   .player-avatar-img { width: 22px; height: 22px; }
@@ -331,6 +339,14 @@ body {
   .tile-sm .tile-honor { font-size: 10px; }
   .hand-bottom { gap: 0px; }
   .mahjong-table { max-width: 300px; }
+}
+
+@media (min-width: 414px) {
+  /* iPhone Plus/Pro Max (414-430px) */
+  .mahjong-table { max-width: 410px; grid-template-columns: 40px 1fr 40px; }
+  .hand-side .tile { width: 34px; height: 16px; min-width: 34px; min-height: 16px; }
+  .hand-bottom .tile { max-width: 42px; }
+  .hand-top .tile { width: 28px; height: 36px; }
 }
 
 @media (min-width: 768px) {
