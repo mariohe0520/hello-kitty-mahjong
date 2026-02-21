@@ -779,10 +779,10 @@ const Game = (() => {
       wall: [...deck], // tiles to draw from
       drawIndex: 0,
       players: [
-        { hand: [], melds: [], discards: [], score: 25000, isHuman: true, name: '我', avatar: '🎀', personality: null, removedSuit: null, hasWon: false },
-        { hand: [], melds: [], discards: [], score: 25000, isHuman: false, name: '下家', avatar: '🦊', personality: 'aggressive', removedSuit: null, hasWon: false },
-        { hand: [], melds: [], discards: [], score: 25000, isHuman: false, name: '对家', avatar: '🐻', personality: 'cautious', removedSuit: null, hasWon: false },
-        { hand: [], melds: [], discards: [], score: 25000, isHuman: false, name: '上家', avatar: '🐰', personality: 'balanced', removedSuit: null, hasWon: false },
+        { hand: [], melds: [], discards: [], score: 25000, isHuman: true, name: '我', avatar: '🎀', personality: null, charId: null, removedSuit: null, hasWon: false },
+        { hand: [], melds: [], discards: [], score: 25000, isHuman: false, name: '狐狸', avatar: '🦊', personality: 'tricky', charId: 'fox', removedSuit: null, hasWon: false },
+        { hand: [], melds: [], discards: [], score: 25000, isHuman: false, name: '大熊', avatar: '🐻', personality: 'aggressive', charId: 'bear', removedSuit: null, hasWon: false },
+        { hand: [], melds: [], discards: [], score: 25000, isHuman: false, name: '小兔', avatar: '🐰', personality: 'defensive', charId: 'bunny', removedSuit: null, hasWon: false },
       ],
       currentPlayer: 0,    // dealer starts
       dealer: 0,
@@ -803,13 +803,43 @@ const Game = (() => {
   // ║  GAME FLOW                                               ║
   // ╚═══════════════════════════════════════════════════════════╝
 
-  async function startGame(mode = 'beijing') {
+  async function startGame(mode = 'beijing', options = {}) {
     injectTileImageStyles();
     preloadImages();
     Particles.init();
     Particles.start();
 
     state = createInitialState(mode);
+
+    // Campaign level support
+    if (options.campaignLevel) {
+      state.campaignLevel = options.campaignLevel;
+      state.aiDifficulty = options.aiDifficulty || 0.5;
+    }
+
+    // Character-based opponents
+    if (options.opponents && typeof Characters !== 'undefined') {
+      const charIds = options.opponents;
+      for (let i = 1; i < 4 && i - 1 < charIds.length; i++) {
+        const charId = charIds[i - 1];
+        const char = Characters.getCharacter(charId);
+        if (char) {
+          state.players[i].name = char.name;
+          state.players[i].avatar = char.emoji;
+          state.players[i].personality = char.personality;
+          state.players[i].charId = charId;
+        }
+      }
+      // Update avatar displays
+      const avatarEls = { 1: 'avatar-right', 2: 'avatar-top', 3: 'avatar-left' };
+      const nameEls = { 1: 'name-right', 2: 'name-top', 3: 'name-left' };
+      for (let i = 1; i < 4; i++) {
+        const aEl = document.getElementById(avatarEls[i]);
+        const nEl = document.getElementById(nameEls[i]);
+        if (aEl) aEl.textContent = state.players[i].avatar;
+        if (nEl) nEl.textContent = state.players[i].name;
+      }
+    }
 
     // Update UI
     updateTopBar();
@@ -818,6 +848,19 @@ const Game = (() => {
     // Start ambient dust
     if (dustInterval) clearInterval(dustInterval);
     dustInterval = setInterval(() => Particles.dustMotes(), 2000);
+
+    // Show character dialogue on game start
+    if (typeof Characters !== 'undefined') {
+      for (let i = 1; i < 4; i++) {
+        const charId = state.players[i].charId;
+        if (charId) {
+          const line = Characters.getDialogue(charId, 'gameStart');
+          if (line && typeof App !== 'undefined') {
+            setTimeout(() => App.showCharacterBubble(charId, 'gameStart'), 500 + i * 800);
+          }
+        }
+      }
+    }
 
     // Deal animation
     await dealTiles();
@@ -1824,9 +1867,34 @@ const Game = (() => {
     if (typeof Stats !== 'undefined') {
       if (playerIndex === 0) {
         const handType = isTsumo ? 'zimo' : null;
-        Stats.recordWin(state.mode, points, handType);
+        Stats.recordWin(state.mode, points, scoreResult.fans, handType);
+        // Campaign integration
+        if (state.campaignLevel && typeof App !== 'undefined') {
+          App.handleCampaignWin(state.campaignLevel, scoreResult);
+        }
       } else {
         Stats.recordLoss();
+      }
+    }
+
+    // Character friendship
+    if (typeof Storage !== 'undefined') {
+      for (let i = 1; i < 4; i++) {
+        const charId = state.players[i].charId;
+        if (charId) Storage.addFriendshipExp(charId, playerIndex === 0 ? 15 : 10);
+      }
+    }
+
+    // Character dialogue on win/lose
+    if (typeof Characters !== 'undefined') {
+      for (let i = 1; i < 4; i++) {
+        const charId = state.players[i].charId;
+        if (charId) {
+          const event = i === playerIndex ? 'hu' : (playerIndex === 0 ? 'react_others_hu' : 'lose');
+          if (typeof App !== 'undefined') {
+            setTimeout(() => App.showCharacterBubble(charId, event), 500 + i * 400);
+          }
+        }
       }
     }
 
@@ -1837,14 +1905,6 @@ const Game = (() => {
   }
 
   // ─── Show win screen ───
-  // Avatar map: player index → SVG path
-  const AVATAR_MAP = {
-    0: 'assets/avatars/kitty.svg',
-    1: 'assets/avatars/fox.svg',
-    2: 'assets/avatars/bear.svg',
-    3: 'assets/avatars/bunny.svg',
-  };
-  const AVATAR_FALLBACK = { 0: '🎀', 1: '🦊', 2: '🐻', 3: '🐰' };
 
   function showWinScreen(playerIndex, scoreResult, isTsumo) {
     const player = state.players[playerIndex];
@@ -1858,14 +1918,13 @@ const Game = (() => {
       modal.style.opacity = '1';
     });
 
-    // Win title with avatar image
+    // Win title
     const title = modal.querySelector('.win-title');
     if (title) {
       if (player.isHuman) {
         title.textContent = '🎉 胡牌！';
       } else {
-        const avatarSrc = AVATAR_MAP[playerIndex] || '';
-        title.innerHTML = `<img src="${avatarSrc}" style="width:36px;height:36px;border-radius:50%;vertical-align:middle;margin-right:6px;" onerror="this.outerHTML='${player.avatar}'"> ${player.name} 胡牌！`;
+        title.innerHTML = `${player.avatar || '🐱'} ${player.name} 胡牌！`;
       }
     }
 

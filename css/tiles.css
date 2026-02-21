@@ -1,32 +1,18 @@
 /* ═══════════════════════════════════════════════════════════════
-   Hello Kitty 麻将 — 麻将牌样式 (Complete)
-   All tile rendering styles — no JS injection needed
+   Hello Kitty 麻将 v2.0 — Tile Styles (Premium 3D)
    ═══════════════════════════════════════════════════════════════ */
 
 /* ─── Base Tile ─── */
 .tile {
-  width: 36px;
-  height: 48px;
-  min-width: 36px;
-  min-height: 48px;
+  width: 36px; height: 48px; min-width: 36px; min-height: 48px;
   background: linear-gradient(175deg, #fffff8 0%, #faf5e8 20%, #f0ead0 60%, #e8e0c0 100%);
-  border: 1px solid #c0b898;
-  border-radius: 7px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  user-select: none;
-  -webkit-user-select: none;
-  /* NO preserve-3d — causes iOS Safari rendering issues with interactive tiles */
-  box-sizing: border-box;
-  flex-shrink: 0;
-  transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.12s ease;
+  border: 1px solid #c0b898; border-radius: 7px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-weight: 700; cursor: pointer; position: relative;
+  overflow: hidden; user-select: none; -webkit-user-select: none;
+  box-sizing: border-box; flex-shrink: 0;
+  transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.12s ease;
   box-shadow:
     0 1px 0 0 #e8e0c8,
     0 3px 0 0 #c8b890,
@@ -36,32 +22,18 @@
     inset 0 -1px 0 rgba(0,0,0,0.05);
 }
 
-/* 3D depth effect — bottom edge */
 .tile::before {
-  content: '';
-  position: absolute;
-  bottom: -4px;
-  left: 1px;
-  right: 1px;
-  height: 5px;
+  content: ''; position: absolute;
+  bottom: -4px; left: 1px; right: 1px; height: 5px;
   background: linear-gradient(180deg, #d4c8a0, #b8a880);
-  border-radius: 0 0 5px 5px;
-  z-index: -1;
+  border-radius: 0 0 5px 5px; z-index: -1;
 }
-/* Top highlight shine */
 .tile::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 40%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.35) 0%, transparent 100%);
-  border-radius: 7px 7px 0 0;
-  pointer-events: none;
-  z-index: 3;
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 40%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.35), transparent);
+  border-radius: 7px 7px 0 0; pointer-events: none; z-index: 3;
 }
-
 .tile:active:not(.locked):not(.face-down) {
   transform: translateY(2px);
   box-shadow:
@@ -71,33 +43,19 @@
     inset 0 1px 0 rgba(255,255,255,0.5);
 }
 
-/* ─── Tile Image (SVG face — hidden on mobile, shown on tablet+) ─── */
-.tile-img {
-  /* On mobile (< 768px), SVGs are too small to read at 36px.
-     Hide them entirely and rely on text rendering which is always clear. */
-  display: none;
-}
-
-/* Only show SVG tiles on tablet/desktop where tiles are large enough */
+/* ─── SVG tile image ─── */
+.tile-img { display: none; }
 @media (min-width: 768px) {
   .tile-img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: block;
-    pointer-events: none;
-    z-index: 2;
-    background: linear-gradient(175deg, #fffef8 0%, #f5f0e0 40%, #e8e0c8 100%);
-    border-radius: inherit;
-    padding: 3px;
-    box-sizing: border-box;
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%; object-fit: contain;
+    display: block; pointer-events: none; z-index: 2;
+    background: linear-gradient(175deg, #fffef8, #f5f0e0 40%, #e8e0c8);
+    border-radius: inherit; padding: 3px; box-sizing: border-box;
   }
 }
 
-/* ─── Selected tile ─── */
+/* ─── Selected ─── */
 .tile.selected {
   transform: translateY(-12px) scale(1.08);
   box-shadow:
@@ -107,23 +65,14 @@
     0 14px 4px rgba(0,0,0,0.2),
     0 0 20px rgba(255,107,157,0.4),
     inset 0 1px 0 rgba(255,255,255,0.8);
-  border-color: #ff6b9d;
-  z-index: 10;
+  border-color: #ff6b9d; z-index: 10;
 }
 
-/* ─── Face-down tile (Hello Kitty pink back) ─── */
+/* ─── Face-down (Hello Kitty pink back) ─── */
 .tile.face-down {
   background:
-    repeating-linear-gradient(
-      45deg,
-      transparent, transparent 3px,
-      rgba(255,255,255,0.12) 3px, rgba(255,255,255,0.12) 4px
-    ),
-    repeating-linear-gradient(
-      -45deg,
-      transparent, transparent 3px,
-      rgba(255,255,255,0.06) 3px, rgba(255,255,255,0.06) 4px
-    ),
+    repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(255,255,255,0.12) 3px, rgba(255,255,255,0.12) 4px),
+    repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(255,255,255,0.06) 3px, rgba(255,255,255,0.06) 4px),
     linear-gradient(135deg, #ff6b9d 0%, #ff8fbf 40%, #ffb3d9 100%);
   border-color: #e55a8a;
   box-shadow:
@@ -131,216 +80,71 @@
     0 3px 0 0 #c04878,
     0 5px 0 0 #a03860,
     0 6px 2px rgba(0,0,0,0.3),
-    inset 0 1px 0 rgba(255,255,255,0.35),
-    inset 0 -1px 0 rgba(0,0,0,0.1);
+    inset 0 1px 0 rgba(255,255,255,0.35);
 }
+.tile.face-down::before { background: linear-gradient(180deg, #e55a8a, #c04878); }
+.tile.face-down::after { background: linear-gradient(180deg, rgba(255,255,255,0.25), transparent); }
+.tile-back { font-size: 16px; line-height: 1; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2)); }
 
-.tile.face-down::before {
-  background: linear-gradient(180deg, #e55a8a, #c04878);
-}
-.tile.face-down::after {
-  background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 100%);
-}
+/* ─── Tile text content ─── */
+.tile-rank { font-size: 18px; line-height: 1; font-weight: 900; text-shadow: 0 1px 1px rgba(0,0,0,0.1); pointer-events: none; }
+.tile-suit { font-size: 9px; line-height: 1; margin-top: 1px; font-weight: 700; pointer-events: none; }
+.tile-honor { font-size: 20px; font-weight: 900; line-height: 1; text-shadow: 0 1px 1px rgba(0,0,0,0.1); pointer-events: none; }
 
-.tile-back {
-  font-size: 16px;
-  line-height: 1;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
-}
-
-/* ─── Tile content (text — primary render) ─── */
-.tile-rank {
-  font-size: 18px;
-  line-height: 1;
-  font-weight: 900;
-  text-shadow: 0 1px 1px rgba(0,0,0,0.1);
-  pointer-events: none;
-}
-
-.tile-suit {
-  font-size: 9px;
-  line-height: 1;
-  margin-top: 1px;
-  font-weight: 700;
-  pointer-events: none;
-}
-
-.tile-honor {
-  font-size: 20px;
-  font-weight: 900;
-  line-height: 1;
-  text-shadow: 0 1px 1px rgba(0,0,0,0.1);
-  pointer-events: none;
-}
-
-/* ─── Small tiles (opponents / melds) ─── */
+/* ─── Small tiles ─── */
 .tile-sm {
-  width: 24px;
-  height: 32px;
-  min-width: 24px;
-  min-height: 32px;
+  width: 24px; height: 32px; min-width: 24px; min-height: 32px;
   border-radius: 5px;
-  border-width: 1px;
-  box-shadow:
-    0 1px 0 0 #e8e0c8,
-    0 2px 0 0 #c8b890,
-    0 3px 0 0 #b8a878,
-    0 4px 2px rgba(0,0,0,0.2),
-    inset 0 1px 0 rgba(255,255,255,0.6);
+  box-shadow: 0 1px 0 0 #e8e0c8, 0 2px 0 0 #c8b890, 0 3px 0 0 #b8a878, 0 4px 2px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.6);
 }
-
-.tile-sm .tile-rank {
-  font-size: 13px;
-  font-weight: 900;
-}
-
-.tile-sm .tile-suit {
-  font-size: 7px;
-  font-weight: 700;
-}
-
-.tile-sm .tile-honor {
-  font-size: 14px;
-  font-weight: 900;
-}
-
-.tile-sm .tile-back {
-  font-size: 11px;
-}
-
-.tile-sm::before {
-  height: 3px;
-}
-
-.tile-sm .tile-img {
-  padding: 1px;
-}
+.tile-sm .tile-rank { font-size: 13px; }
+.tile-sm .tile-suit { font-size: 7px; }
+.tile-sm .tile-honor { font-size: 14px; }
+.tile-sm .tile-back { font-size: 11px; }
+.tile-sm::before { height: 3px; }
 
 /* ─── Mini tiles (discard pool) ─── */
 .tile-mini {
-  width: 18px;
-  height: 24px;
-  min-width: 18px;
-  min-height: 24px;
-  font-size: 8px;
+  width: 18px; height: 24px; min-width: 18px; min-height: 24px;
   border-radius: 3px;
-  border-width: 1px;
-  box-shadow:
-    0 1px 0 0 #d8d0b8,
-    0 2px 0 0 #c0b890,
-    0 3px 2px rgba(0,0,0,0.15);
+  box-shadow: 0 1px 0 0 #d8d0b8, 0 2px 0 0 #c0b890, 0 3px 2px rgba(0,0,0,0.15);
 }
+.tile-mini .tile-rank { font-size: 10px; }
+.tile-mini .tile-suit { font-size: 6px; }
+.tile-mini .tile-honor { font-size: 10px; }
+.tile-mini .tile-back { font-size: 8px; }
+.tile-mini::before, .tile-mini::after { display: none; }
 
-.tile-mini .tile-rank {
-  font-size: 10px;
-  font-weight: 900;
-}
-
-.tile-mini .tile-suit {
-  font-size: 6px;
-  font-weight: 700;
-}
-
-.tile-mini .tile-honor {
-  font-size: 10px;
-  font-weight: 900;
-}
-
-.tile-mini .tile-back {
-  font-size: 8px;
-}
-
-.tile-mini .tile-img {
-  padding: 1px;
-}
-
-.tile-mini::before {
-  display: none;
-}
-
-.tile-mini::after {
-  display: none;
-}
-
-/* ─── Tile animations ─── */
+/* ─── Animations ─── */
 @keyframes tileEnter {
-  0% {
-    transform: translateY(-30px) rotateX(90deg);
-    opacity: 0;
-  }
-  60% {
-    transform: translateY(3px) rotateX(-5deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(0) rotateX(0);
-  }
+  0% { transform: translateY(-30px) rotateX(90deg); opacity: 0; }
+  60% { transform: translateY(3px) rotateX(-5deg); opacity: 1; }
+  100% { transform: translateY(0) rotateX(0); }
 }
-
-.tile.entering {
-  animation: tileEnter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
+.tile.entering { animation: tileEnter 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards; }
 
 @keyframes tileDiscard {
-  0% { transform: scale(1.2); opacity: 1; filter: brightness(1.1); }
+  0% { transform: scale(1.2); opacity: 1; }
   40% { transform: scale(0.7) translateY(-30px); opacity: 0.9; }
-  70% { transform: scale(0.6) translateY(0); opacity: 0.85; }
-  85% { transform: scale(0.6) translateY(-4px); opacity: 0.9; }
-  100% { transform: scale(0.6) translateY(0); opacity: 1; filter: brightness(1); }
+  100% { transform: scale(0.6) translateY(0); opacity: 1; }
 }
+.tile.discarding { animation: tileDiscard 0.4s ease forwards; z-index: 50; pointer-events: none; }
 
-.tile.discarding {
-  animation: tileDiscard 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
-  z-index: 50;
-  pointer-events: none;
-}
-
-/* ─── Win tile glow ─── */
-.tile.winning {
-  animation: winGlow 0.8s ease-in-out infinite;
-  border-color: #f5c518;
-}
-
+.tile.winning { animation: winGlow 0.8s ease-in-out infinite; border-color: #f5c518; }
 @keyframes winGlow {
-  0%, 100% {
-    box-shadow:
-      0 1px 0 0 #e8e0c8,
-      0 3px 0 0 #c8b890,
-      0 5px 0 0 #b8a878,
-      0 6px 8px rgba(245,197,24,0.3);
-  }
-  50% {
-    box-shadow:
-      0 1px 0 0 #e8e0c8,
-      0 3px 0 0 #c8b890,
-      0 5px 0 0 #b8a878,
-      0 6px 20px rgba(245,197,24,0.7),
-      0 0 30px rgba(245,197,24,0.4);
-  }
+  0%, 100% { box-shadow: 0 1px 0 0 #e8e0c8, 0 3px 0 0 #c8b890, 0 5px 0 0 #b8a878, 0 6px 8px rgba(245,197,24,0.3); }
+  50% { box-shadow: 0 1px 0 0 #e8e0c8, 0 3px 0 0 #c8b890, 0 5px 0 0 #b8a878, 0 6px 20px rgba(245,197,24,0.7), 0 0 30px rgba(245,197,24,0.4); }
 }
 
-/* ─── Locked tiles (melds) ─── */
-.tile.locked {
-  opacity: 0.9;
-  border-color: #a0a0a0;
-  cursor: default;
-}
+.tile.locked { opacity: 0.9; border-color: #a0a0a0; cursor: default; }
 
-/* ─── Hover effect ─── */
 @media (hover: hover) {
   .tile:hover:not(.face-down):not(.locked):not(.selected) {
     transform: translateY(-5px);
-    box-shadow:
-      0 1px 0 0 #e8e0c8,
-      0 5px 0 0 #c8b890,
-      0 7px 0 0 #b8a878,
-      0 9px 4px rgba(0,0,0,0.2),
-      inset 0 1px 0 rgba(255,255,255,0.8),
-      inset 0 -1px 0 rgba(0,0,0,0.05);
+    box-shadow: 0 1px 0 0 #e8e0c8, 0 5px 0 0 #c8b890, 0 7px 0 0 #b8a878, 0 9px 4px rgba(0,0,0,0.2);
   }
 }
 
-/* ─── Shake animation ─── */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   20% { transform: translateX(-4px); }
@@ -349,20 +153,12 @@
   80% { transform: translateX(2px); }
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   Game UI Styles (moved from JS injection)
-   ═══════════════════════════════════════════════════════════════ */
+/* ═══ Game UI Styles ═══ */
 
-/* ─── Turn indicator ring ─── */
-.player-area.active-turn {
-  position: relative;
-}
+.player-area.active-turn { position: relative; }
 .player-area.active-turn::after {
-  content: '';
-  position: absolute;
-  inset: -6px;
-  border-radius: 12px;
-  border: 2px solid #ff6b9d;
+  content: ''; position: absolute; inset: -6px;
+  border-radius: 12px; border: 2px solid #ff6b9d;
   animation: turnRingPulse 1.5s ease-in-out infinite;
   pointer-events: none;
 }
@@ -371,209 +167,60 @@
   50% { border-color: rgba(255,107,157,0.2); box-shadow: 0 0 20px rgba(255,107,157,0.1); }
 }
 
-/* ─── Action calligraphy text ─── */
+/* Action calligraphy */
 .action-calligraphy {
-  position: fixed;
-  top: 45%;
-  left: 50%;
+  position: fixed; top: 45%; left: 50%;
   transform: translate(-50%, -50%) scale(0);
-  font-size: 96px;
-  font-weight: 900;
-  pointer-events: none;
-  z-index: 300;
+  font-size: 96px; font-weight: 900; pointer-events: none; z-index: 300;
   text-shadow: 0 0 40px currentColor, 0 4px 8px rgba(0,0,0,0.3);
-  animation: calligraphyBurst 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  animation: calligraphyBurst 0.8s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
   letter-spacing: 4px;
 }
 @keyframes calligraphyBurst {
   0% { transform: translate(-50%, -50%) scale(0) rotate(-15deg); opacity: 0; filter: blur(8px); }
   25% { transform: translate(-50%, -50%) scale(1.5) rotate(3deg); opacity: 1; filter: blur(0); }
-  50% { transform: translate(-50%, -50%) scale(1.15) rotate(-1deg); opacity: 1; }
-  75% { transform: translate(-50%, -50%) scale(1.05) rotate(0deg); opacity: 0.7; }
-  100% { transform: translate(-50%, -50%) scale(0.9) rotate(0deg); opacity: 0; filter: blur(4px); }
+  50% { transform: translate(-50%, -50%) scale(1.15) rotate(-1deg); }
+  100% { transform: translate(-50%, -50%) scale(0.9); opacity: 0; filter: blur(4px); }
 }
 
-/* ─── Golden Hu (win) calligraphy ─── */
 .action-calligraphy.action-hu {
   font-size: 120px;
   background: linear-gradient(180deg, #fff8dc, #f5c518, #d4a017, #f5c518, #fff8dc);
   background-size: 100% 200%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: calligraphyBurst 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  animation: calligraphyBurst 1s cubic-bezier(0.175,0.885,0.32,1.275) forwards,
              goldenShimmer 0.6s ease-in-out 3;
   text-shadow: none;
-  filter: drop-shadow(0 0 30px rgba(245,197,24,0.7)) drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+  filter: drop-shadow(0 0 30px rgba(245,197,24,0.7));
 }
-@keyframes goldenShimmer {
-  0% { background-position: 0% 0%; }
-  100% { background-position: 0% 200%; }
-}
+@keyframes goldenShimmer { 0% { background-position: 0% 0%; } 100% { background-position: 0% 200%; } }
 
-/* ─── Remaining tiles progress ring ─── */
-.remaining-ring {
-  width: 56px;
-  height: 56px;
-  position: relative;
-  filter: drop-shadow(0 0 8px rgba(245,197,24,0.2));
-}
-.remaining-ring svg {
-  transform: rotate(-90deg);
-}
+/* Remaining tiles ring */
+.remaining-ring { width: 56px; height: 56px; position: relative; filter: drop-shadow(0 0 8px rgba(245,197,24,0.2)); }
+.remaining-ring svg { transform: rotate(-90deg); }
 .remaining-ring .ring-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
+  position: absolute; top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  display: inline-flex;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  font-weight: 900;
-  color: #f5c518;
-  text-shadow: 0 0 8px rgba(245,197,24,0.5), 0 1px 3px rgba(0,0,0,0.5);
-  background: radial-gradient(circle, rgba(245,197,24,0.1), transparent 70%);
+  display: inline-flex; width: 40px; height: 40px; border-radius: 50%;
+  align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 900; color: #f5c518;
+  text-shadow: 0 0 8px rgba(245,197,24,0.5);
 }
 .remaining-ring .ring-label {
-  position: absolute;
-  bottom: -14px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 10px;
-  color: rgba(255,255,255,0.5);
-  white-space: nowrap;
+  position: absolute; bottom: -14px; left: 50%;
+  transform: translateX(-50%); font-size: 10px;
+  color: rgba(255,255,255,0.5); white-space: nowrap;
 }
 
-/* ─── Meld group ─── */
-.meld-group {
-  display: flex;
-  gap: 1px;
-  margin: 0 4px;
-  opacity: 0.95;
-}
-.meld-group .tile {
-  cursor: default;
-}
+.meld-group { display: flex; gap: 1px; margin: 0 4px; opacity: 0.95; }
+.meld-group .tile { cursor: default; }
 
-/* ─── Table noise texture overlay ─── */
 .mahjong-table::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 20px;
-  background: 
-    radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.06) 0%, transparent 60%),
-    repeating-conic-gradient(rgba(0,0,0,0.02) 0% 25%, transparent 0% 50%) 0 0 / 4px 4px;
-  pointer-events: none;
-  z-index: 0;
+  content: ''; position: absolute; inset: 0; border-radius: 20px;
+  background: radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.06), transparent 60%);
+  pointer-events: none; z-index: 0;
 }
-.mahjong-table > * {
-  position: relative;
-  z-index: 1;
-}
+.mahjong-table > * { position: relative; z-index: 1; }
 
-/* ─── Settings overlay ─── */
-.settings-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 400;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.settings-overlay.visible { opacity: 1; }
-.settings-panel {
-  background: #fff;
-  border-radius: 20px;
-  padding: 28px 24px;
-  max-width: 320px;
-  width: 90%;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.3);
-  transform: translateY(20px);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.settings-overlay.visible .settings-panel { transform: translateY(0); }
-.settings-panel h3 {
-  font-size: 20px;
-  margin-bottom: 20px;
-  text-align: center;
-  color: #ff6b9d;
-}
-.setting-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-.setting-row:last-child { border-bottom: none; }
-.setting-label { font-size: 15px; font-weight: 600; }
-.setting-toggle {
-  width: 48px;
-  height: 28px;
-  border-radius: 14px;
-  background: #ddd;
-  border: none;
-  position: relative;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.setting-toggle.on { background: #ff6b9d; }
-.setting-toggle::after {
-  content: '';
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #fff;
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  transition: left 0.2s;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-.setting-toggle.on::after { left: 22px; }
-
-/* ─── Que yi men selector (Sichuan) ─── */
-.queyimen-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.7);
-  z-index: 350;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.queyimen-panel {
-  background: #fff;
-  border-radius: 20px;
-  padding: 28px 24px;
-  text-align: center;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.3);
-}
-.queyimen-panel h3 { font-size: 20px; margin-bottom: 8px; color: #e74c3c; }
-.queyimen-panel p { font-size: 14px; color: #666; margin-bottom: 20px; }
-.queyimen-options { display: flex; gap: 12px; justify-content: center; }
-.queyimen-btn {
-  padding: 16px 24px;
-  border: 2px solid #ddd;
-  border-radius: 14px;
-  background: #fff;
-  font-size: 18px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.queyimen-btn:active { transform: scale(0.95); }
-.queyimen-btn.recommended { border-color: #ff6b9d; background: #fff0f5; }
-
-/* ─── Pulse animation for action buttons ─── */
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-}
+/* Pulse for action buttons */
+@keyframes actionPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }

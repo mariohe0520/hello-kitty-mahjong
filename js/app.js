@@ -1,40 +1,35 @@
 // ═══════════════════════════════════════════════════════════════
-// 🎀 Hello Kitty 麻将 — App Controller
-// Animated splash, page transitions, settings, menu wiring
+// 🎀 Hello Kitty 麻将 — App Controller v2.0
+// Tab navigation, page routing, character selection, settings
 // ═══════════════════════════════════════════════════════════════
 
 const App = (() => {
   'use strict';
 
   let currentPage = 'splash';
-  let settings = {
-    soundEnabled: true,
-    aiSpeed: 'normal', // slow, normal, fast
-    tileStyle: 'svg',  // svg, png, text
-  };
+  let settings = null;
   let settingsOverlay = null;
 
+  function getSettings() {
+    if (!settings) {
+      const profile = Storage.getProfile();
+      settings = profile.settings;
+    }
+    return settings;
+  }
+
   // ╔═══════════════════════════════════════════════════════════╗
-  // ║  SPLASH SCREEN — Animated tile cascade                   ║
+  // ║  SPLASH SCREEN                                           ║
   // ╚═══════════════════════════════════════════════════════════╝
 
   function initSplash() {
     const splash = document.getElementById('splash');
     if (!splash) return;
 
-    // Create cascading tile elements for splash
     const splashContent = splash.querySelector('.splash-content');
     const tileContainer = document.createElement('div');
-    tileContainer.style.cssText = `
-      display: flex;
-      gap: 6px;
-      justify-content: center;
-      margin-top: 20px;
-      height: 56px;
-      overflow: hidden;
-    `;
+    tileContainer.style.cssText = 'display:flex;gap:6px;justify-content:center;margin-top:20px;height:56px;overflow:hidden;';
 
-    // Sample tiles for splash cascade
     const sampleKeys = ['w1', 'w2', 'w3', 'b5', 'jz', 't7', 'fe', 'jf', 'b9'];
     sampleKeys.forEach((key, i) => {
       const tile = { ...TILES[key], key, id: `splash_${key}` };
@@ -43,8 +38,6 @@ const App = (() => {
       el.style.transform = 'translateY(-60px) rotateX(90deg)';
       el.style.transition = 'none';
       tileContainer.appendChild(el);
-
-      // Cascade animation with stagger
       setTimeout(() => {
         el.style.transition = 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
         el.style.opacity = '1';
@@ -52,129 +45,403 @@ const App = (() => {
       }, 300 + i * 100);
     });
 
-    // Insert before loading text
     const loadingEl = splash.querySelector('.splash-loading');
     if (loadingEl) {
       splashContent.insertBefore(tileContainer, loadingEl);
       loadingEl.textContent = '正在洗牌...';
     }
 
-    // Auto-transition to menu after splash
-    setTimeout(() => {
-      hideSplash();
-    }, 2200);
+    setTimeout(() => hideSplash(), 2200);
   }
 
   function hideSplash() {
     const splash = document.getElementById('splash');
     if (!splash) return;
-
     splash.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
     splash.style.opacity = '0';
     splash.style.transform = 'scale(1.05)';
-
     setTimeout(() => {
       splash.style.display = 'none';
-      navigateTo('menu');
+      navigateTo('home');
     }, 600);
   }
 
   // ╔═══════════════════════════════════════════════════════════╗
-  // ║  PAGE TRANSITIONS — Smooth slide/fade with parallax      ║
+  // ║  PAGE NAVIGATION — Tab system                            ║
   // ╚═══════════════════════════════════════════════════════════╝
 
   function navigateTo(pageId) {
-    const oldPage = document.getElementById(currentPage);
+    const allPages = document.querySelectorAll('.page');
+    allPages.forEach(p => {
+      if (p.id !== 'splash') {
+        p.style.display = 'none';
+        p.style.opacity = '';
+        p.style.transform = '';
+      }
+    });
+
     const newPage = document.getElementById(pageId);
     if (!newPage) return;
 
-    // Determine direction
-    const pages = ['menu', 'game', 'tutorial'];
-    const oldIdx = pages.indexOf(currentPage);
-    const newIdx = pages.indexOf(pageId);
-    const direction = newIdx >= oldIdx ? 1 : -1;
-
-    // Show new page off-screen
     newPage.style.display = 'flex';
-    newPage.style.position = 'fixed';
-    newPage.style.inset = '0';
-    newPage.style.zIndex = '50';
     newPage.style.opacity = '0';
-    newPage.style.transform = `translateX(${direction * 30}px)`;
-    newPage.style.transition = 'none';
-
-    // Fade out old page
-    if (oldPage && oldPage.id !== 'splash') {
-      oldPage.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-      oldPage.style.opacity = '0';
-      oldPage.style.transform = `translateX(${-direction * 15}px)`;
-    }
-
-    // Fade in new page
+    newPage.style.transform = 'translateY(10px)';
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        newPage.style.transition = 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-        newPage.style.opacity = '1';
-        newPage.style.transform = 'translateX(0)';
-      });
+      newPage.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      newPage.style.opacity = '1';
+      newPage.style.transform = 'translateY(0)';
     });
 
-    // Clean up after transition
-    setTimeout(() => {
-      if (oldPage && oldPage.id !== 'splash') {
-        oldPage.style.display = 'none';
-        oldPage.style.opacity = '';
-        oldPage.style.transform = '';
-        oldPage.style.position = '';
-        oldPage.style.transition = '';
-        oldPage.style.zIndex = '';
-      }
-      newPage.style.position = '';
-      newPage.style.zIndex = '';
-    }, 500);
-
     currentPage = pageId;
+    updateTabBar(pageId);
+
+    // Show/hide tab bar
+    const tabBar = document.getElementById('tab-bar');
+    if (tabBar) {
+      const hideTabs = ['game', 'splash', 'tutorial'];
+      tabBar.style.display = hideTabs.includes(pageId) ? 'none' : 'flex';
+    }
+
+    // Page-specific init
+    if (pageId === 'home') renderHomePage();
+    if (pageId === 'story') renderStoryPage();
+    if (pageId === 'collection') renderCollectionPage();
+    if (pageId === 'achievements') renderAchievementsPage();
+  }
+
+  function updateTabBar(pageId) {
+    document.querySelectorAll('.tab-item').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.page === pageId);
+    });
   }
 
   // ╔═══════════════════════════════════════════════════════════╗
-  // ║  MENU ACTIONS                                            ║
+  // ║  HOME PAGE                                               ║
+  // ╚═══════════════════════════════════════════════════════════╝
+
+  function renderHomePage() {
+    const container = document.getElementById('home-content');
+    if (!container) return;
+
+    const profile = Storage.getProfile();
+    const stats = Stats.getStats();
+    const daily = Campaign.generateDailyChallenge();
+    const winRate = stats.gamesPlayed ? Math.round(stats.gamesWon / stats.gamesPlayed * 100) : 0;
+    const progress = Campaign.getTotalProgress();
+
+    container.innerHTML = `
+      <div class="home-header">
+        <div class="home-profile">
+          <div class="home-avatar">${profile.avatar}</div>
+          <div class="home-info">
+            <div class="home-name">${profile.name}</div>
+            <div class="home-level">Lv.${profile.level} ${profile.title}</div>
+          </div>
+          <div class="home-coins">
+            <span>🪙 ${profile.coins}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Play -->
+      <div class="home-section">
+        <div class="section-title">🎮 快速开始</div>
+        <div class="quick-play-grid">
+          <button class="play-card play-beijing" onclick="App.startGame('beijing')">
+            <span class="play-icon">🏯</span>
+            <span class="play-name">北京麻将</span>
+            <span class="play-desc">经典规则</span>
+          </button>
+          <button class="play-card play-sichuan" onclick="App.startGame('sichuan')">
+            <span class="play-icon">🌶️</span>
+            <span class="play-name">川麻血战</span>
+            <span class="play-desc">血战到底</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Daily Challenge -->
+      <div class="home-section">
+        <div class="section-title">📅 每日挑战</div>
+        <div class="daily-card ${daily.completed ? 'completed' : ''}">
+          <div class="daily-info">
+            <div class="daily-name">${daily.challenge?.name || '加载中...'}</div>
+            <div class="daily-desc">${daily.challenge?.desc || ''}</div>
+          </div>
+          <div class="daily-reward">
+            ${daily.completed ? '✅ 已完成' : `🪙 ${daily.reward?.coins || 200}`}
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Summary -->
+      <div class="home-section">
+        <div class="section-title">📊 战绩概览</div>
+        <div class="home-stats-row">
+          <div class="home-stat"><span class="home-stat-value">${stats.gamesWon}</span><span class="home-stat-label">胜局</span></div>
+          <div class="home-stat"><span class="home-stat-value">${winRate}%</span><span class="home-stat-label">胜率</span></div>
+          <div class="home-stat"><span class="home-stat-value">${stats.bestWinStreak}</span><span class="home-stat-label">最长连胜</span></div>
+          <div class="home-stat"><span class="home-stat-value">${progress.completedLevels}</span><span class="home-stat-label">物语进度</span></div>
+        </div>
+      </div>
+
+      <!-- Campaign Progress -->
+      <div class="home-section">
+        <div class="section-title">📖 麻将物语</div>
+        <button class="story-banner" onclick="App.navigateTo('story')">
+          <div class="story-banner-left">
+            <div class="story-banner-chapter">第${Math.min(5, Math.ceil(progress.completedLevels / 10) || 1)}章</div>
+            <div class="story-banner-name">${Campaign.CHAPTERS[Math.min(4, Math.floor(progress.completedLevels / 10))].name}</div>
+          </div>
+          <div class="story-banner-progress">
+            <div class="story-bar"><div class="story-bar-fill" style="width:${progress.percentage}%"></div></div>
+            <span class="story-bar-text">${progress.completedLevels}/${progress.totalLevels}</span>
+          </div>
+          <span class="story-arrow">›</span>
+        </button>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="home-section">
+        <div class="home-quick-actions">
+          <button class="quick-btn" onclick="App.showTutorial()"><span>📖</span>教学</button>
+          <button class="quick-btn" onclick="App.showSettings()"><span>⚙️</span>设置</button>
+          <button class="quick-btn" onclick="App.navigateTo('achievements')"><span>🏅</span>成就</button>
+        </div>
+      </div>
+
+      <div class="home-footer">
+        <span class="version">Hello Kitty 麻将 v2.0 🎀</span>
+      </div>
+    `;
+  }
+
+  // ╔═══════════════════════════════════════════════════════════╗
+  // ║  STORY / CAMPAIGN PAGE                                   ║
+  // ╚═══════════════════════════════════════════════════════════╝
+
+  function renderStoryPage() {
+    const container = document.getElementById('story-content');
+    if (!container) return;
+
+    const campaignProgress = Storage.getCampaign();
+
+    let html = '';
+    for (const chapter of Campaign.CHAPTERS) {
+      const isUnlocked = Campaign.isChapterUnlocked(chapter.id);
+      const levels = Campaign.getChapterLevels(chapter.id);
+
+      html += `<div class="chapter-card ${isUnlocked ? '' : 'locked'}">
+        <div class="chapter-header" style="border-left:4px solid ${chapter.color}">
+          <span class="chapter-icon">${chapter.icon}</span>
+          <div class="chapter-info">
+            <div class="chapter-name">${isUnlocked ? chapter.name : '???'}</div>
+            <div class="chapter-subtitle">${isUnlocked ? chapter.subtitle : `需要 ${chapter.unlockStars}⭐`}</div>
+          </div>
+          <div class="chapter-stars">⭐ ${levels.reduce((s, l) => s + Campaign.getLevelStars(l.id), 0)}/${levels.length * 3}</div>
+        </div>`;
+
+      if (isUnlocked) {
+        html += '<div class="chapter-levels">';
+        for (const level of levels) {
+          const completed = Campaign.isLevelCompleted(level.id);
+          const stars = Campaign.getLevelStars(level.id);
+          const isNext = !completed && (level.id === 1 || Campaign.isLevelCompleted(level.id - 1));
+          const isLocked = !completed && !isNext;
+
+          html += `<button class="level-btn ${completed ? 'completed' : isNext ? 'next' : 'locked'} ${level.isBoss ? 'boss' : ''}"
+            onclick="${isLocked ? '' : `App.startCampaignLevel(${level.id})`}"
+            ${isLocked ? 'disabled' : ''}>
+            <span class="level-num">${level.isBoss ? '👑' : level.id}</span>
+            <div class="level-stars">${completed ? '⭐'.repeat(stars) + '☆'.repeat(3 - stars) : ''}</div>
+          </button>`;
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+
+    container.innerHTML = html;
+  }
+
+  // ╔═══════════════════════════════════════════════════════════╗
+  // ║  COLLECTION PAGE                                         ║
+  // ╚═══════════════════════════════════════════════════════════╝
+
+  function renderCollectionPage() {
+    const container = document.getElementById('collection-content');
+    if (!container) return;
+
+    const unlocks = Storage.getUnlocks();
+    const allChars = Characters.getAllCharacters();
+
+    let html = '<div class="section-title" style="color:#fff;">🎭 角色图鉴</div>';
+    html += '<div class="collection-grid">';
+    for (const char of allChars) {
+      const isUnlocked = unlocks.characters.includes(char.id);
+      const friendship = Characters.getFriendshipInfo(char.id);
+      html += `<div class="collection-card ${isUnlocked ? '' : 'locked'}" style="border-color:${char.color}40">
+        <div class="collection-avatar" style="font-size:40px;${!isUnlocked ? 'filter:grayscale(1) opacity(0.4);' : ''}">${char.emoji}</div>
+        <div class="collection-name" style="color:${isUnlocked ? char.color : '#666'}">${isUnlocked ? char.name : '???'}</div>
+        <div class="collection-desc">${isUnlocked ? char.desc : '未解锁'}</div>
+        ${isUnlocked ? `<div class="collection-friendship">
+          <div class="friendship-bar"><div class="friendship-fill" style="width:${friendship.progress * 100}%;background:${char.color}"></div></div>
+          <span class="friendship-text">${friendship.title} Lv.${friendship.level}</span>
+        </div>` : ''}
+      </div>`;
+    }
+    html += '</div>';
+
+    // Tile themes
+    const THEMES = [
+      { id: 'classic', name: '经典', icon: '🀄', color: '#8B4513' },
+      { id: 'hello-kitty', name: 'Hello Kitty', icon: '🎀', color: '#ff6b9d' },
+      { id: 'bamboo', name: '竹林', icon: '🎋', color: '#2d5016' },
+      { id: 'jade', name: '翡翠', icon: '💎', color: '#00a86b' },
+      { id: 'gold', name: '黄金', icon: '👑', color: '#f5c518' },
+      { id: 'neon', name: '霓虹', icon: '💜', color: '#9b59b6' },
+      { id: 'sakura', name: '樱花', icon: '🌸', color: '#ff69b4' },
+      { id: 'ocean', name: '海洋', icon: '🌊', color: '#0077be' },
+    ];
+
+    html += '<div class="section-title" style="color:#fff;margin-top:24px;">🎨 牌面主题</div>';
+    html += '<div class="collection-grid themes">';
+    for (const theme of THEMES) {
+      const isUnlocked = unlocks.tileThemes.includes(theme.id);
+      const isActive = getSettings().tileTheme === theme.id;
+      html += `<div class="theme-card ${isUnlocked ? '' : 'locked'} ${isActive ? 'active' : ''}"
+        onclick="${isUnlocked ? `App.setTheme('${theme.id}')` : ''}"
+        style="border-color:${isActive ? theme.color : 'transparent'}">
+        <div class="theme-icon">${isUnlocked ? theme.icon : '🔒'}</div>
+        <div class="theme-name">${theme.name}</div>
+      </div>`;
+    }
+    html += '</div>';
+
+    container.innerHTML = html;
+  }
+
+  // ╔═══════════════════════════════════════════════════════════╗
+  // ║  ACHIEVEMENTS PAGE                                       ║
+  // ╚═══════════════════════════════════════════════════════════╝
+
+  function renderAchievementsPage() {
+    const container = document.getElementById('achievements-content');
+    if (!container) return;
+    container.innerHTML = Stats.renderStatsHTML();
+  }
+
+  // ╔═══════════════════════════════════════════════════════════╗
+  // ║  GAME ACTIONS                                            ║
   // ╚═══════════════════════════════════════════════════════════╝
 
   function startGame(mode = 'beijing') {
-    // Initialize Audio context on user gesture
     try { Game.Sound.getCtx(); } catch(e) {}
 
-    // Record login + game start for stats
-    if (typeof Stats !== 'undefined') {
-      Stats.recordLogin();
-      const newAchievements = Stats.recordGameStart();
-      if (newAchievements.length) {
-        setTimeout(() => showAchievementToast(newAchievements[0]), 2000);
-      }
+    Stats.recordLogin();
+    const newAchievements = Stats.recordGameStart(mode);
+    if (newAchievements.length) {
+      setTimeout(() => showAchievementToast(newAchievements[0]), 2000);
     }
 
     navigateTo('game');
-
-    // Small delay for transition, then start game
-    setTimeout(() => {
-      Game.startGame(mode);
-    }, 400);
+    setTimeout(() => Game.startGame(mode), 300);
   }
+
+  function startCampaignLevel(levelId) {
+    const level = Campaign.getLevel(levelId);
+    if (!level) return;
+
+    // Show dialogue before starting
+    if (level.dialogue?.before) {
+      showDialogue(level.dialogue.before, () => {
+        _launchCampaignGame(level);
+      });
+    } else {
+      _launchCampaignGame(level);
+    }
+  }
+
+  function _launchCampaignGame(level) {
+    try { Game.Sound.getCtx(); } catch(e) {}
+    Stats.recordLogin();
+
+    const chapter = Campaign.getChapter(level.chapter);
+    const rules = chapter?.rules || 'beijing';
+
+    navigateTo('game');
+    setTimeout(() => {
+      Game.startGame(rules, {
+        campaignLevel: level,
+        opponents: level.opponents,
+        aiDifficulty: level.aiDifficulty,
+      });
+    }, 300);
+  }
+
+  function showDialogue(text, onComplete) {
+    const overlay = document.createElement('div');
+    overlay.className = 'dialogue-overlay';
+    overlay.innerHTML = `
+      <div class="dialogue-box">
+        <div class="dialogue-text">${text}</div>
+        <button class="dialogue-btn" onclick="this.closest('.dialogue-overlay').remove()">继续 ›</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('.dialogue-btn').addEventListener('click', () => {
+      if (onComplete) onComplete();
+    });
+  }
+
+  function handleCampaignWin(level, scoreResult) {
+    if (!level) return;
+    const stars = Math.min(3, scoreResult.totalFan >= 6 ? 3 : scoreResult.totalFan >= 3 ? 2 : 1);
+    const rewards = Campaign.completeLevel(level.id, stars);
+    Stats.recordCampaignWin();
+
+    if (level.dialogue?.after) {
+      setTimeout(() => showDialogue(level.dialogue.after), 1500);
+    }
+
+    // Update friendship
+    if (level.opponents) {
+      for (const charId of level.opponents) {
+        Storage.addFriendshipExp(charId, 15);
+      }
+    }
+
+    return rewards;
+  }
+
+  // ╔═══════════════════════════════════════════════════════════╗
+  // ║  UI HELPERS                                              ║
+  // ╚═══════════════════════════════════════════════════════════╝
 
   function showAchievementToast(achievement) {
     const toast = document.createElement('div');
-    toast.innerHTML = `<span style="font-size:28px">${achievement.icon}</span><div><b>🏅 成就解锁！</b><br>${achievement.name}</div>`;
-    toast.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-20px);background:rgba(30,20,50,0.95);color:#fff;padding:12px 20px;border-radius:14px;display:flex;align-items:center;gap:12px;z-index:10000;box-shadow:0 4px 20px rgba(245,197,24,0.3);border:1px solid rgba(245,197,24,0.4);opacity:0;transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1);font-size:14px;';
+    toast.className = 'achievement-toast';
+    toast.innerHTML = `<span class="toast-icon">${achievement.icon}</span><div><b>🏅 成就解锁！</b><br>${achievement.name}</div>`;
     document.body.appendChild(toast);
-    requestAnimationFrame(() => {
-      toast.style.opacity = '1';
-      toast.style.transform = 'translateX(-50%) translateY(0)';
-    });
+    requestAnimationFrame(() => toast.classList.add('show'));
     setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateX(-50%) translateY(-20px)';
+      toast.classList.remove('show');
       setTimeout(() => toast.remove(), 400);
     }, 3000);
+  }
+
+  function showCharacterBubble(charId, event, position) {
+    const text = Characters.getDialogue(charId, event);
+    if (!text) return;
+    const bubble = document.createElement('div');
+    bubble.className = 'char-speech-bubble';
+    bubble.innerHTML = text;
+    bubble.style.cssText = `position:absolute;z-index:200;`;
+    document.getElementById('mahjong-table')?.appendChild(bubble);
+    setTimeout(() => {
+      bubble.style.opacity = '0';
+      setTimeout(() => bubble.remove(), 300);
+    }, 2500);
   }
 
   function showTutorial() {
@@ -182,263 +449,192 @@ const App = (() => {
     Tutorial.init();
   }
 
-  function showMultiplayer() {
-    // Show coming soon modal
-    showModal('👥 好友对战', '多人在线对战功能正在开发中...\n敬请期待！', [
-      { text: '知道了', action: () => hideModal() }
-    ]);
-  }
-
   function backToMenu() {
-    // Destroy active game
-    if (Game.getState()) {
-      Game.destroy();
-    }
-
-    // Hide win screen if visible
+    if (Game.getState()) Game.destroy();
     const winScreen = document.getElementById('win-screen');
     if (winScreen) winScreen.style.display = 'none';
-
-    navigateTo('menu');
+    navigateTo('home');
   }
 
   function nextRound() {
     const winScreen = document.getElementById('win-screen');
     if (winScreen) winScreen.style.display = 'none';
-
     const gameState = Game.getState();
     if (!gameState) return;
-
-    // Start a new round with the same mode
     Game.startGame(gameState.mode);
   }
 
+  function setTheme(themeId) {
+    settings.tileTheme = themeId;
+    const profile = Storage.getProfile();
+    profile.settings = settings;
+    Storage.saveProfile(profile);
+    renderCollectionPage();
+  }
+
   // ╔═══════════════════════════════════════════════════════════╗
-  // ║  SETTINGS PANEL                                          ║
+  // ║  SETTINGS                                                ║
   // ╚═══════════════════════════════════════════════════════════╝
 
   function showSettings() {
     if (settingsOverlay) return;
+    const s = getSettings();
 
     settingsOverlay = document.createElement('div');
     settingsOverlay.className = 'settings-overlay';
-
     settingsOverlay.innerHTML = `
       <div class="settings-panel">
         <h3>⚙️ 设置</h3>
         <div class="setting-row">
           <span class="setting-label">🔊 音效</span>
-          <button class="setting-toggle ${settings.soundEnabled ? 'on' : ''}" data-setting="sound"></button>
+          <button class="setting-toggle ${s.soundEnabled ? 'on' : ''}" data-setting="sound"></button>
         </div>
         <div class="setting-row">
           <span class="setting-label">🤖 AI速度</span>
-          <div style="display:flex;gap:6px;">
-            <button class="speed-btn ${settings.aiSpeed === 'slow' ? 'active' : ''}" data-speed="slow"
-              style="padding:6px 14px;border:2px solid ${settings.aiSpeed === 'slow' ? '#ff6b9d' : '#ddd'};
-              border-radius:10px;background:${settings.aiSpeed === 'slow' ? '#fff0f5' : '#fff'};
-              font-size:13px;font-weight:600;cursor:pointer;">慢</button>
-            <button class="speed-btn ${settings.aiSpeed === 'normal' ? 'active' : ''}" data-speed="normal"
-              style="padding:6px 14px;border:2px solid ${settings.aiSpeed === 'normal' ? '#ff6b9d' : '#ddd'};
-              border-radius:10px;background:${settings.aiSpeed === 'normal' ? '#fff0f5' : '#fff'};
-              font-size:13px;font-weight:600;cursor:pointer;">中</button>
-            <button class="speed-btn ${settings.aiSpeed === 'fast' ? 'active' : ''}" data-speed="fast"
-              style="padding:6px 14px;border:2px solid ${settings.aiSpeed === 'fast' ? '#ff6b9d' : '#ddd'};
-              border-radius:10px;background:${settings.aiSpeed === 'fast' ? '#fff0f5' : '#fff'};
-              font-size:13px;font-weight:600;cursor:pointer;">快</button>
+          <div class="setting-options">
+            ${['slow', 'normal', 'fast'].map(v => `<button class="speed-btn ${s.aiSpeed === v ? 'active' : ''}" data-speed="${v}">${v === 'slow' ? '慢' : v === 'normal' ? '中' : '快'}</button>`).join('')}
           </div>
         </div>
         <div class="setting-row">
-          <span class="setting-label">🎨 牌面风格</span>
-          <div style="display:flex;gap:6px;">
-            <button class="style-btn ${settings.tileStyle === 'svg' ? 'active' : ''}" data-style="svg"
-              style="padding:6px 14px;border:2px solid ${settings.tileStyle === 'svg' ? '#ff6b9d' : '#ddd'};
-              border-radius:10px;background:${settings.tileStyle === 'svg' ? '#fff0f5' : '#fff'};
-              font-size:13px;font-weight:600;cursor:pointer;">精美</button>
-            <button class="style-btn ${settings.tileStyle === 'text' ? 'active' : ''}" data-style="text"
-              style="padding:6px 14px;border:2px solid ${settings.tileStyle === 'text' ? '#ff6b9d' : '#ddd'};
-              border-radius:10px;background:${settings.tileStyle === 'text' ? '#fff0f5' : '#fff'};
-              font-size:13px;font-weight:600;cursor:pointer;">简约</button>
+          <span class="setting-label">💡 游戏提示</span>
+          <button class="setting-toggle ${s.showHints ? 'on' : ''}" data-setting="hints"></button>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">🎯 难度</span>
+          <div class="setting-options">
+            ${['easy', 'normal', 'hard', 'master'].map(v => `<button class="diff-btn ${s.difficulty === v ? 'active' : ''}" data-diff="${v}">${v === 'easy' ? '简单' : v === 'normal' ? '普通' : v === 'hard' ? '困难' : '大师'}</button>`).join('')}
           </div>
         </div>
         <div style="margin-top:20px;text-align:center;">
-          <button class="close-settings" style="
-            padding:12px 40px;background:linear-gradient(135deg,#ff6b9d,#ff8fbf);
-            border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:700;
-            cursor:pointer;box-shadow:0 4px 12px rgba(255,107,157,0.3);">
-            完成
-          </button>
+          <button class="close-settings-btn">完成</button>
         </div>
       </div>
     `;
 
     document.body.appendChild(settingsOverlay);
+    requestAnimationFrame(() => settingsOverlay.classList.add('visible'));
 
-    // Animate in
-    requestAnimationFrame(() => {
-      settingsOverlay.classList.add('visible');
+    // Wire events
+    settingsOverlay.querySelector('[data-setting="sound"]').addEventListener('click', function() {
+      s.soundEnabled = !s.soundEnabled;
+      this.classList.toggle('on', s.soundEnabled);
+      Game.Sound.setMuted(!s.soundEnabled);
+      _saveSettings();
     });
 
-    // Wire up interactions
-    settingsOverlay.querySelector('[data-setting="sound"]').addEventListener('click', function() {
-      settings.soundEnabled = !settings.soundEnabled;
-      this.classList.toggle('on', settings.soundEnabled);
-      Game.Sound.setMuted(!settings.soundEnabled);
-      if (settings.soundEnabled) Game.Sound.playTap();
+    settingsOverlay.querySelector('[data-setting="hints"]').addEventListener('click', function() {
+      s.showHints = !s.showHints;
+      this.classList.toggle('on', s.showHints);
+      _saveSettings();
     });
 
     settingsOverlay.querySelectorAll('.speed-btn').forEach(btn => {
       btn.addEventListener('click', function() {
-        settings.aiSpeed = this.dataset.speed;
-        settingsOverlay.querySelectorAll('.speed-btn').forEach(b => {
-          b.style.borderColor = '#ddd';
-          b.style.background = '#fff';
-        });
-        this.style.borderColor = '#ff6b9d';
-        this.style.background = '#fff0f5';
-        Game.Sound.playTap();
+        s.aiSpeed = this.dataset.speed;
+        settingsOverlay.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        _saveSettings();
       });
     });
 
-    settingsOverlay.querySelectorAll('.style-btn').forEach(btn => {
+    settingsOverlay.querySelectorAll('.diff-btn').forEach(btn => {
       btn.addEventListener('click', function() {
-        settings.tileStyle = this.dataset.style;
-        settingsOverlay.querySelectorAll('.style-btn').forEach(b => {
-          b.style.borderColor = '#ddd';
-          b.style.background = '#fff';
-        });
-        this.style.borderColor = '#ff6b9d';
-        this.style.background = '#fff0f5';
-        Game.Sound.playTap();
+        s.difficulty = this.dataset.diff;
+        settingsOverlay.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        _saveSettings();
       });
     });
 
-    settingsOverlay.querySelector('.close-settings').addEventListener('click', hideSettings);
+    settingsOverlay.querySelector('.close-settings-btn').addEventListener('click', hideSettings);
+    settingsOverlay.addEventListener('click', (e) => { if (e.target === settingsOverlay) hideSettings(); });
+  }
 
-    // Click overlay background to close
-    settingsOverlay.addEventListener('click', (e) => {
-      if (e.target === settingsOverlay) hideSettings();
-    });
+  function _saveSettings() {
+    const profile = Storage.getProfile();
+    profile.settings = settings;
+    Storage.saveProfile(profile);
   }
 
   function hideSettings() {
     if (!settingsOverlay) return;
     settingsOverlay.classList.remove('visible');
-    setTimeout(() => {
-      settingsOverlay.remove();
-      settingsOverlay = null;
-    }, 300);
+    setTimeout(() => { settingsOverlay.remove(); settingsOverlay = null; }, 300);
   }
 
   function toggleSettings() {
-    if (settingsOverlay) {
-      hideSettings();
-    } else {
-      showSettings();
-    }
+    settingsOverlay ? hideSettings() : showSettings();
   }
 
   // ╔═══════════════════════════════════════════════════════════╗
-  // ║  GENERIC MODAL                                           ║
+  // ║  MODAL                                                   ║
   // ╚═══════════════════════════════════════════════════════════╝
 
   let modalOverlay = null;
 
   function showModal(title, message, buttons = []) {
     if (modalOverlay) modalOverlay.remove();
-
     modalOverlay = document.createElement('div');
     modalOverlay.className = 'modal';
     modalOverlay.style.display = 'flex';
-
-    const buttonsHtml = buttons.map((b, i) => `
-      <button class="menu-btn ${i === 0 ? 'btn-pink' : 'btn-gray'}"
-        data-btn-index="${i}" style="margin-top:8px;">
-        <span class="btn-text">${b.text}</span>
-      </button>
-    `).join('');
-
-    modalOverlay.innerHTML = `
-      <div class="modal-content" style="animation: huCelebrate 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;">
-        <div class="win-title" style="font-size:24px;">${title}</div>
-        <p style="color:#666;margin:12px 0;white-space:pre-line;">${message}</p>
-        ${buttonsHtml}
-      </div>
-    `;
-
+    const buttonsHtml = buttons.map((b, i) => `<button class="menu-btn ${i === 0 ? 'btn-pink' : 'btn-gray'}" data-btn-index="${i}" style="margin-top:8px;"><span class="btn-text">${b.text}</span></button>`).join('');
+    modalOverlay.innerHTML = `<div class="modal-content"><div class="win-title" style="font-size:24px;">${title}</div><p style="color:#999;margin:12px 0;white-space:pre-line;">${message}</p>${buttonsHtml}</div>`;
     document.body.appendChild(modalOverlay);
-
-    // Wire buttons
     buttons.forEach((b, i) => {
       const btn = modalOverlay.querySelector(`[data-btn-index="${i}"]`);
-      if (btn && b.action) {
-        btn.addEventListener('click', b.action);
-      }
+      if (btn && b.action) btn.addEventListener('click', b.action);
     });
   }
 
   function hideModal() {
     if (modalOverlay) {
-      modalOverlay.style.transition = 'opacity 0.3s';
       modalOverlay.style.opacity = '0';
-      setTimeout(() => {
-        modalOverlay.remove();
-        modalOverlay = null;
-      }, 300);
+      setTimeout(() => { modalOverlay?.remove(); modalOverlay = null; }, 300);
     }
   }
 
   // ╔═══════════════════════════════════════════════════════════╗
-  // ║  INITIALIZATION                                          ║
+  // ║  INIT                                                    ║
   // ╚═══════════════════════════════════════════════════════════╝
 
   function init() {
-    // Load saved settings
-    try {
-      const saved = localStorage.getItem('hk-mahjong-settings');
-      if (saved) {
-        Object.assign(settings, JSON.parse(saved));
-        Game.Sound.setMuted(!settings.soundEnabled);
-      }
-    } catch(e) {}
+    getSettings();
+    Game.Sound.setMuted(!settings.soundEnabled);
 
-    // Start splash
-    initSplash();
-
-    // Save settings on unload
-    window.addEventListener('beforeunload', () => {
-      try {
-        localStorage.setItem('hk-mahjong-settings', JSON.stringify(settings));
-      } catch(e) {}
+    // Tab bar events
+    document.querySelectorAll('.tab-item').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const page = tab.dataset.page;
+        if (page) navigateTo(page);
+        try { Game.Sound.playTap(); } catch {}
+      });
     });
+
+    initSplash();
   }
 
-  // Auto-init when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
   }
 
-  function showStats() {
-    navigateTo('stats-page');
-    const el = document.getElementById('stats-content');
-    if (el && typeof Stats !== 'undefined') {
-      el.innerHTML = Stats.renderStatsHTML();
-    }
-  }
-
-  // ─── Public API ───
   return {
     startGame,
+    startCampaignLevel,
+    handleCampaignWin,
     showTutorial,
-    showMultiplayer,
     showSettings,
-    showStats,
     toggleSettings,
     backToMenu,
     nextRound,
     navigateTo,
     showModal,
     hideModal,
+    showAchievementToast,
+    showCharacterBubble,
+    showDialogue,
+    setTheme,
+    getSettings,
   };
 })();

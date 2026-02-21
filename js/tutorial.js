@@ -1,16 +1,15 @@
 // ═══════════════════════════════════════════════════════════════
-// 📖 Hello Kitty 麻将 — Interactive Tutorial
-// 3-step tutorial with animated tile demos
+// 📖 Hello Kitty 麻将 — Interactive Tutorial System
+// Step-by-step teaching with animated tile demos, hints
 // ═══════════════════════════════════════════════════════════════
 
 const Tutorial = (() => {
   'use strict';
 
   let currentStep = 1;
-  const TOTAL_STEPS = 3;
+  const TOTAL_STEPS = 6;
   let demoAnimations = [];
 
-  // ─── Tile demo data ───
   const DEMO_TILES = {
     sequence: [
       { key: 'w1', ...TILES.w1, id: 'demo_w1_0' },
@@ -47,7 +46,6 @@ const Tutorial = (() => {
       ],
     },
     winHand: [
-      // 4 melds + 1 pair example
       { key: 'w1', ...TILES.w1, id: 'demo_win_w1' },
       { key: 'w2', ...TILES.w2, id: 'demo_win_w2' },
       { key: 'w3', ...TILES.w3, id: 'demo_win_w3' },
@@ -65,227 +63,94 @@ const Tutorial = (() => {
     ],
   };
 
+  const STEPS = [
+    { title: '🀄 什么是麻将？', content: `<p>麻将是四个人玩的桌游，目标是用手里的牌组成特定的牌型来<span class="tutorial-highlight">胡牌</span>获胜。</p><p>每人开始有13张牌，轮流摸牌、打牌。</p>` },
+    { title: '🎴 麻将牌有哪些？', content: `<p>麻将有四种花色，每种1-9各四张：</p><p><span class="tutorial-highlight">万子</span>（红色）、<span class="tutorial-highlight">条子</span>（绿色）、<span class="tutorial-highlight">筒子</span>（蓝色）</p><p>还有<span class="tutorial-highlight">字牌</span>：东南西北 + 中发白</p>` },
+    { title: '🏆 怎么赢？', content: `<p>把手里14张牌组成 <span class="tutorial-highlight">4组+1对</span> 就赢了！</p><p>一组可以是：<br>• <b>顺子</b>：三张连续的同花色牌 (如 1万2万3万)<br>• <b>刻子</b>：三张相同的牌 (如 5筒5筒5筒)</p>` },
+    { title: '🎯 吃碰杠', content: `<p>别人打的牌你也可以拿：</p><p>• <span class="tutorial-highlight">吃</span>：上家打的牌正好能组成顺子<br>• <span class="tutorial-highlight">碰</span>：任何人打的牌你手里有两张一样的<br>• <span class="tutorial-highlight">杠</span>：你有三张一样的，别人打出第四张</p>` },
+    { title: '💡 安全打牌', content: `<p>怎样避免"点炮"（把牌送给别人胡）：</p><p>• 别人刚打过的牌 → <span class="tutorial-highlight">比较安全</span><br>• 已经出现3张的牌 → <span class="tutorial-highlight">很安全</span><br>• 中间数字(4,5,6) → <span class="tutorial-highlight">比较危险</span><br>• 1和9 → <span class="tutorial-highlight">相对安全</span></p>` },
+    { title: '🌟 开始游戏！', content: `<p>你已经掌握了麻将的基础！</p><p>💡 <b>小贴士</b>：<br>• 先打不需要的牌<br>• 注意别人打了什么牌<br>• 快要赢的时候注意安全<br>• 多玩多练，越打越好！</p><p style="text-align:center;font-size:24px;margin-top:16px;">🎀 祝你好运！ 🎀</p>` },
+  ];
+
   function init() {
     currentStep = 1;
     renderStep(currentStep);
-    injectTutorialStyles();
   }
 
-  function injectTutorialStyles() {
-    if (document.getElementById('tutorial-premium-styles')) return;
-    const style = document.createElement('style');
-    style.id = 'tutorial-premium-styles';
-    style.textContent = `
-      .tutorial-tile-row {
-        display: flex;
-        gap: 4px;
-        justify-content: center;
-        align-items: center;
-        padding: 16px;
-        background: linear-gradient(180deg, #f8f4e8, #f0ead8);
-        border-radius: 14px;
-        margin: 12px 0;
-        box-shadow: inset 0 2px 8px rgba(0,0,0,0.06);
-        flex-wrap: wrap;
-      }
-      .tutorial-tile-group {
-        display: flex;
-        gap: 3px;
-        align-items: center;
-        margin: 4px 8px;
-      }
-      .tutorial-tile-group-label {
-        font-size: 12px;
-        color: #999;
-        margin-top: 4px;
-        text-align: center;
-      }
-      .tutorial-separator {
-        width: 2px;
-        height: 40px;
-        background: rgba(0,0,0,0.1);
-        margin: 0 8px;
-        border-radius: 1px;
-      }
-      .tutorial-bracket {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin: 0 4px;
-      }
-      .tutorial-bracket-label {
-        font-size: 11px;
-        color: #ff6b9d;
-        font-weight: 700;
-        margin-top: 6px;
-        padding: 2px 8px;
-        background: #fff0f5;
-        border-radius: 10px;
-      }
-      .tutorial-tile-row .tile {
-        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-      }
-      .tutorial-tile-row .tile:hover {
-        transform: translateY(-6px) scale(1.08);
-      }
-      .tutorial-step {
-        opacity: 0;
-        transform: translateX(20px);
-        transition: opacity 0.4s, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-      }
-      .tutorial-step.active {
-        display: block;
-        opacity: 1;
-        transform: translateX(0);
-      }
-      .tutorial-step.exiting {
-        opacity: 0;
-        transform: translateX(-20px);
-      }
-      .tutorial-highlight {
-        display: inline-block;
-        background: linear-gradient(135deg, #ff6b9d20, #ff6b9d40);
-        padding: 2px 8px;
-        border-radius: 6px;
-        font-weight: 700;
-        color: #e55a8a;
-      }
-      .tutorial-progress-bar {
-        display: flex;
-        gap: 6px;
-        justify-content: center;
-        margin: 16px 0;
-      }
-      .tutorial-progress-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #ddd;
-        transition: all 0.3s;
-      }
-      .tutorial-progress-dot.active {
-        background: #ff6b9d;
-        transform: scale(1.3);
-      }
-      .tutorial-progress-dot.completed {
-        background: #ff8fbf;
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  // ─── Render current step content ───
   function renderStep(step) {
     const content = document.getElementById('tutorial-content');
     if (!content) return;
 
-    // Update progress
     const progress = document.getElementById('tutorial-progress');
     if (progress) progress.textContent = `${step}/${TOTAL_STEPS}`;
 
-    // Animate out old, in new
+    // Generate step HTML
+    const stepData = STEPS[step - 1];
+    if (!stepData) return;
+
     const steps = content.querySelectorAll('.tutorial-step');
     steps.forEach(s => {
-      if (s.classList.contains('active')) {
-        s.classList.remove('active');
-        s.classList.add('exiting');
-        setTimeout(() => s.classList.remove('exiting'), 400);
-      }
+      s.classList.remove('active');
+      s.style.display = 'none';
     });
 
-    setTimeout(() => {
-      steps.forEach(s => s.style.display = 'none');
-      const target = content.querySelector(`[data-step="${step}"]`);
-      if (target) {
-        target.style.display = 'block';
-        // Force reflow before adding active class
-        target.offsetHeight;
-        target.classList.add('active');
-        renderTileDemos(step, target);
-      }
-    }, 200);
+    let target = content.querySelector(`[data-step="${step}"]`);
+    if (!target) {
+      target = document.createElement('div');
+      target.className = 'tutorial-step';
+      target.dataset.step = step;
+      const nav = content.querySelector('.tutorial-nav');
+      if (nav) content.insertBefore(target, nav);
+      else content.appendChild(target);
+    }
 
-    // Update nav buttons
+    target.innerHTML = `<h3>${stepData.title}</h3>${stepData.content}<div class="tile-demo"></div>`;
+    target.style.display = 'block';
+    setTimeout(() => target.classList.add('active'), 50);
+
+    renderTileDemos(step, target);
     updateNavButtons(step);
   }
 
-  // ─── Ensure a .tile-demo container exists within the step ───
-  function ensureDemoContainer(container) {
-    let demo = container.querySelector('.tile-demo');
-    if (!demo) {
-      demo = document.createElement('div');
-      demo.className = 'tile-demo';
-      container.appendChild(demo);
-    }
+  function renderTileDemos(step, container) {
+    stopDemoAnimations();
+    const demo = container.querySelector('.tile-demo');
+    if (!demo) return;
     demo.innerHTML = '';
     demo.className = 'tutorial-tile-row';
-    return demo;
-  }
-
-  // ─── Render real tile demos for each step ───
-  function renderTileDemos(step, container) {
-    // Clear existing demos
-    stopDemoAnimations();
 
     if (step === 1) {
-      // Step 1: Show sequence and triplet
-      const demo = ensureDemoContainer(container);
-
-      // Sequence demo
       const seqGroup = createTileGroup('顺子', DEMO_TILES.sequence);
       demo.appendChild(seqGroup);
-
-      // Separator
       const sep = document.createElement('div');
       sep.className = 'tutorial-separator';
       demo.appendChild(sep);
-
-      // Triplet demo
       const tripGroup = createTileGroup('刻子', DEMO_TILES.triplet);
       demo.appendChild(tripGroup);
-
-      // Animate tiles appearing one by one
-      animateTilesSequential(demo.querySelectorAll('.tile'), 150);
-    }
-
-    if (step === 2) {
-      // Step 2: Show all suit types with real tiles
-      const demo = ensureDemoContainer(container);
+    } else if (step === 2) {
       demo.style.flexDirection = 'column';
-
-      const suitGroups = [
+      const groups = [
         { name: '万子', tiles: DEMO_TILES.suits.wan, color: '#e74c3c' },
         { name: '条子', tiles: DEMO_TILES.suits.tiao, color: '#2ecc71' },
         { name: '筒子', tiles: DEMO_TILES.suits.tong, color: '#3498db' },
         { name: '字牌', tiles: DEMO_TILES.suits.honors, color: '#9b59b6' },
       ];
-
-      for (const sg of suitGroups) {
+      for (const sg of groups) {
         const row = document.createElement('div');
         row.style.cssText = 'display:flex;align-items:center;gap:8px;margin:4px 0;';
-
         const label = document.createElement('span');
         label.style.cssText = `font-size:13px;font-weight:700;color:${sg.color};min-width:40px;text-align:right;`;
         label.textContent = sg.name;
         row.appendChild(label);
-
         const group = document.createElement('div');
         group.className = 'tutorial-tile-group';
         for (const tile of sg.tiles) {
-          const el = Game.renderTile(tile, { small: true });
-          group.appendChild(el);
+          group.appendChild(Game.renderTile(tile, { small: true }));
         }
         row.appendChild(group);
         demo.appendChild(row);
       }
-
-      animateTilesSequential(demo.querySelectorAll('.tile'), 80);
-    }
-
-    if (step === 3) {
-      // Step 3: Show winning hand decomposition
-      const demo = ensureDemoContainer(container);
-
+    } else if (step === 3) {
       const groups = [
         { label: '顺子', tiles: DEMO_TILES.winHand.slice(0, 3) },
         { label: '顺子', tiles: DEMO_TILES.winHand.slice(3, 6) },
@@ -293,27 +158,19 @@ const Tutorial = (() => {
         { label: '刻子', tiles: DEMO_TILES.winHand.slice(9, 12) },
         { label: '对子', tiles: DEMO_TILES.winHand.slice(12, 14) },
       ];
-
       for (let i = 0; i < groups.length; i++) {
         const g = groups[i];
         const bracket = document.createElement('div');
         bracket.className = 'tutorial-bracket';
-
         const tileGroup = document.createElement('div');
         tileGroup.className = 'tutorial-tile-group';
-        for (const tile of g.tiles) {
-          const el = Game.renderTile(tile, { small: true });
-          tileGroup.appendChild(el);
-        }
+        for (const tile of g.tiles) tileGroup.appendChild(Game.renderTile(tile, { small: true }));
         bracket.appendChild(tileGroup);
-
         const label = document.createElement('span');
         label.className = 'tutorial-bracket-label';
         label.textContent = g.label;
         bracket.appendChild(label);
-
         demo.appendChild(bracket);
-
         if (i < groups.length - 1) {
           const plus = document.createElement('span');
           plus.style.cssText = 'font-size:18px;color:#ccc;margin:0 2px;';
@@ -321,46 +178,38 @@ const Tutorial = (() => {
           demo.appendChild(plus);
         }
       }
-
-      animateTilesSequential(demo.querySelectorAll('.tile'), 60);
+    } else {
+      demo.style.display = 'none';
     }
+
+    animateTiles(demo.querySelectorAll('.tile'), 80);
   }
 
-  // ─── Create a labeled tile group ───
   function createTileGroup(label, tiles) {
     const bracket = document.createElement('div');
     bracket.className = 'tutorial-bracket';
-
     const group = document.createElement('div');
     group.className = 'tutorial-tile-group';
-    for (const tile of tiles) {
-      const el = Game.renderTile(tile, { small: false });
-      group.appendChild(el);
-    }
+    for (const tile of tiles) group.appendChild(Game.renderTile(tile, { small: false }));
     bracket.appendChild(group);
-
     const labelEl = document.createElement('span');
     labelEl.className = 'tutorial-bracket-label';
     labelEl.textContent = label;
     bracket.appendChild(labelEl);
-
     return bracket;
   }
 
-  // ─── Animate tiles appearing sequentially ───
-  function animateTilesSequential(tiles, stagger = 100) {
+  function animateTiles(tiles, stagger) {
     tiles.forEach((tile, i) => {
       tile.style.opacity = '0';
       tile.style.transform = 'translateY(-20px) rotateX(60deg) scale(0.7)';
       tile.style.transition = 'none';
-
-      const timerId = setTimeout(() => {
+      const id = setTimeout(() => {
         tile.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
         tile.style.opacity = '1';
         tile.style.transform = 'translateY(0) rotateX(0) scale(1)';
       }, i * stagger);
-
-      demoAnimations.push(timerId);
+      demoAnimations.push(id);
     });
   }
 
@@ -369,36 +218,23 @@ const Tutorial = (() => {
     demoAnimations = [];
   }
 
-  // ─── Update nav buttons ───
   function updateNavButtons(step) {
     const content = document.getElementById('tutorial-content');
     if (!content) return;
-
     const prevBtn = content.querySelector('.btn-nav:first-child');
     const nextBtn = content.querySelector('.btn-nav:last-child');
-
-    if (prevBtn) {
-      prevBtn.style.visibility = step === 1 ? 'hidden' : 'visible';
-    }
-    if (nextBtn) {
-      nextBtn.textContent = step === TOTAL_STEPS ? '完成 ✨' : '下一步';
-    }
+    if (prevBtn) prevBtn.style.visibility = step === 1 ? 'hidden' : 'visible';
+    if (nextBtn) nextBtn.textContent = step === TOTAL_STEPS ? '开始游戏 🎮' : '下一步';
   }
 
-  // ─── Navigation ───
   function next() {
     if (currentStep < TOTAL_STEPS) {
       currentStep++;
       renderStep(currentStep);
     } else {
-      // Tutorial complete — back to menu
-      if (typeof App !== 'undefined' && App.backToMenu) {
-        App.backToMenu();
-      }
+      if (typeof App !== 'undefined') App.backToMenu();
     }
-    if (typeof Game !== 'undefined' && Game.Sound) {
-      Game.Sound.playTap();
-    }
+    try { Game.Sound.playTap(); } catch {}
   }
 
   function prev() {
@@ -406,23 +242,8 @@ const Tutorial = (() => {
       currentStep--;
       renderStep(currentStep);
     }
-    if (typeof Game !== 'undefined' && Game.Sound) {
-      Game.Sound.playTap();
-    }
+    try { Game.Sound.playTap(); } catch {}
   }
 
-  function goToStep(step) {
-    if (step >= 1 && step <= TOTAL_STEPS) {
-      currentStep = step;
-      renderStep(step);
-    }
-  }
-
-  // ─── Public API ───
-  return {
-    init,
-    next,
-    prev,
-    goToStep,
-  };
+  return { init, next, prev };
 })();
