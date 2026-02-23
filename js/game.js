@@ -36,7 +36,7 @@ const Game = (() => {
   }
 
   // ╔═══════════════════════════════════════════════════════════╗
-  // ║  SOUND ENGINE — Mahjong Bamboo Click Sounds             ║
+  // ║  SOUND ENGINE — Web Audio API Synthesizer                ║
   // ╚═══════════════════════════════════════════════════════════╝
 
   const Sound = (() => {
@@ -73,26 +73,11 @@ const Game = (() => {
 
     function isMuted() { return muted; }
 
-    // ─── Tile tap: bamboo crisp click ───
+    // ─── Tile tap: bamboo click ───
     function playTap() {
       const c = getCtx(); const m = getMaster();
       const osc = c.createOscillator();
       const gain = c.createGain();
-      const filter = c.createBiquadFilter();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(1800 + Math.random() * 400, c.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(800, c.currentTime + 0.03);
-      filter.type = 'bandpass';
-      filter.frequency.value = 1200;
-      filter.Q.value = 2;
-      gain.gain.setValueAtTime(0.25, c.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.05);
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(m);
-      osc.start(c.currentTime);
-      osc.stop(c.currentTime + 0.05);
-    }
       const filter = c.createBiquadFilter();
       osc.type = 'square';
       osc.frequency.setValueAtTime(1000 + Math.random() * 200, c.currentTime);
@@ -108,41 +93,36 @@ const Game = (() => {
       osc.stop(c.currentTime + 0.08);
     }
 
-    // ─── Tile place: wood thud (mahjong table sound) ───
+    // ─── Tile place: deep thud ───
     function playPlace() {
       const c = getCtx(); const m = getMaster();
-      // Wood thunk - deeper, more resonant
+      // Body thud
       const osc1 = c.createOscillator();
       const gain1 = c.createGain();
       osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(280, c.currentTime);
-      osc1.frequency.exponentialRampToValueAtTime(80, c.currentTime + 0.12);
-      gain1.gain.setValueAtTime(0.4, c.currentTime);
-      gain1.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.18);
+      osc1.frequency.setValueAtTime(400, c.currentTime);
+      osc1.frequency.exponentialRampToValueAtTime(150, c.currentTime + 0.1);
+      gain1.gain.setValueAtTime(0.35, c.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.15);
       osc1.connect(gain1);
       gain1.connect(m);
       osc1.start(c.currentTime);
-      osc1.stop(c.currentTime + 0.18);
+      osc1.stop(c.currentTime + 0.15);
 
-      // Click noise (bamboo texture)
-      const buf = c.createBuffer(1, c.sampleRate * 0.03, c.sampleRate);
+      // Impact noise
+      const buf = c.createBuffer(1, c.sampleRate * 0.05, c.sampleRate);
       const data = buf.getChannelData(0);
       for (let i = 0; i < data.length; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.1));
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.15));
       }
       const noise = c.createBufferSource();
       noise.buffer = buf;
       const nGain = c.createGain();
-      nGain.gain.setValueAtTime(0.2, c.currentTime);
-      nGain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.04);
+      nGain.gain.setValueAtTime(0.15, c.currentTime);
+      nGain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.06);
       const nFilter = c.createBiquadFilter();
-      nFilter.type = 'highpass';
-      nFilter.frequency.value = 1500;
-      noise.connect(nFilter);
-      nFilter.connect(nGain);
-      nGain.connect(m);
-      noise.start(c.currentTime);
-    }
+      nFilter.type = 'lowpass';
+      nFilter.frequency.value = 2000;
       noise.connect(nFilter);
       nFilter.connect(nGain);
       nGain.connect(m);
