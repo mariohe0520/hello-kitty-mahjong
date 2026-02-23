@@ -443,9 +443,14 @@ body {
 .discard-pool::-webkit-scrollbar { width: 3px; }
 .discard-pool::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 2px; }
 .discard-pool .tile {
-  width: 26px; height: 34px; font-size: 12px;
+  width: 24px; height: 32px; font-size: 11px;
   cursor: default; flex-shrink: 0;
   box-shadow: 0 1px 3px rgba(0,0,0,0.25); border-radius: 3px;
+}
+
+/* Mobile: even smaller to prevent overlap */
+@media (max-width: 380px) {
+  .discard-pool .tile { width: 20px; height: 26px; font-size: 9px; }
 }
 
 /* ═══ ACTION BAR ═══ */
