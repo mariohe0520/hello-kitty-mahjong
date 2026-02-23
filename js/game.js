@@ -73,97 +73,162 @@ const Game = (() => {
 
     function isMuted() { return muted; }
 
-    // ─── Tile tap: bamboo click ───
+    // ─── Tile tap: bamboo click (realistic clack) ───
     function playTap() {
       const c = getCtx(); const m = getMaster();
-      const osc = c.createOscillator();
-      const gain = c.createGain();
-      const filter = c.createBiquadFilter();
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(1000 + Math.random() * 200, c.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(600, c.currentTime + 0.04);
-      filter.type = 'highpass';
-      filter.frequency.value = 800;
-      gain.gain.setValueAtTime(0.3, c.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.08);
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(m);
-      osc.start(c.currentTime);
-      osc.stop(c.currentTime + 0.08);
-    }
-
-    // ─── Tile place: deep thud ───
-    function playPlace() {
-      const c = getCtx(); const m = getMaster();
-      // Body thud
-      const osc1 = c.createOscillator();
-      const gain1 = c.createGain();
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(400, c.currentTime);
-      osc1.frequency.exponentialRampToValueAtTime(150, c.currentTime + 0.1);
-      gain1.gain.setValueAtTime(0.35, c.currentTime);
-      gain1.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.15);
-      osc1.connect(gain1);
-      gain1.connect(m);
-      osc1.start(c.currentTime);
-      osc1.stop(c.currentTime + 0.15);
-
-      // Impact noise
-      const buf = c.createBuffer(1, c.sampleRate * 0.05, c.sampleRate);
+      // Sharp click - two quick oscillator bursts
+      [0, 0.02].forEach(offset => {
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1800 + Math.random() * 400, c.currentTime + offset);
+        osc.frequency.exponentialRampToValueAtTime(800, c.currentTime + offset + 0.025);
+        gain.gain.setValueAtTime(0.25, c.currentTime + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + offset + 0.04);
+        osc.connect(gain);
+        gain.connect(m);
+        osc.start(c.currentTime + offset);
+        osc.stop(c.currentTime + offset + 0.04);
+      });
+      // Add noise burst for texture
+      const buf = c.createBuffer(1, c.sampleRate * 0.02, c.sampleRate);
       const data = buf.getChannelData(0);
       for (let i = 0; i < data.length; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.15));
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.1));
       }
       const noise = c.createBufferSource();
       noise.buffer = buf;
       const nGain = c.createGain();
-      nGain.gain.setValueAtTime(0.15, c.currentTime);
-      nGain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.06);
+      nGain.gain.setValueAtTime(0.12, c.currentTime);
+      nGain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.025);
       const nFilter = c.createBiquadFilter();
-      nFilter.type = 'lowpass';
-      nFilter.frequency.value = 2000;
+      nFilter.type = 'highpass';
+      nFilter.frequency.value = 3000;
       noise.connect(nFilter);
       nFilter.connect(nGain);
       nGain.connect(m);
       noise.start(c.currentTime);
     }
 
-    // ─── Peng: double click ───
+    // ─── Tile place: realistic mahjong clack ───
+    function playPlace() {
+      const c = getCtx(); const m = getMaster();
+      
+      // Main wooden clack - sharp attack
+      const osc1 = c.createOscillator();
+      const gain1 = c.createGain();
+      osc1.type = 'triangle';
+      osc1.frequency.setValueAtTime(1200, c.currentTime);
+      osc1.frequency.exponentialRampToValueAtTime(400, c.currentTime + 0.03);
+      gain1.gain.setValueAtTime(0.4, c.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.06);
+      osc1.connect(gain1);
+      gain1.connect(m);
+      osc1.start(c.currentTime);
+      osc1.stop(c.currentTime + 0.06);
+
+      // Secondary resonance
+      const osc2 = c.createOscillator();
+      const gain2 = c.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(600, c.currentTime);
+      osc2.frequency.exponentialRampToValueAtTime(250, c.currentTime + 0.08);
+      gain2.gain.setValueAtTime(0.2, c.currentTime);
+      gain2.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.1);
+      osc2.connect(gain2);
+      gain2.connect(m);
+      osc2.start(c.currentTime);
+      osc2.stop(c.currentTime + 0.1);
+
+      // Impact noise (the "clack" texture)
+      const buf = c.createBuffer(1, c.sampleRate * 0.04, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.08));
+      }
+      const noise = c.createBufferSource();
+      noise.buffer = buf;
+      const nGain = c.createGain();
+      nGain.gain.setValueAtTime(0.25, c.currentTime);
+      nGain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.04);
+      const nFilter = c.createBiquadFilter();
+      nFilter.type = 'bandpass';
+      nFilter.frequency.value = 2500;
+      nFilter.Q.value = 2;
+      noise.connect(nFilter);
+      nFilter.connect(nGain);
+      nGain.connect(m);
+      noise.start(c.currentTime);
+    }
+
+    // ─── Peng: double clack ───
     function playPeng() {
       const c = getCtx(); const m = getMaster();
-      [0, 0.1].forEach(offset => {
+      // Two sharp clacks
+      [0, 0.06].forEach((offset, idx) => {
+        // Main tone
         const osc = c.createOscillator();
         const gain = c.createGain();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(900, c.currentTime + offset);
-        osc.frequency.exponentialRampToValueAtTime(500, c.currentTime + offset + 0.05);
-        gain.gain.setValueAtTime(0.3, c.currentTime + offset);
-        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + offset + 0.1);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1400 + idx * 200, c.currentTime + offset);
+        osc.frequency.exponentialRampToValueAtTime(600, c.currentTime + offset + 0.04);
+        gain.gain.setValueAtTime(0.35, c.currentTime + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + offset + 0.08);
         osc.connect(gain);
         gain.connect(m);
         osc.start(c.currentTime + offset);
-        osc.stop(c.currentTime + offset + 0.1);
+        osc.stop(c.currentTime + offset + 0.08);
+        
+        // Noise burst
+        const buf = c.createBuffer(1, c.sampleRate * 0.025, c.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.08));
+        }
+        const noise = c.createBufferSource();
+        noise.buffer = buf;
+        const nGain = c.createGain();
+        nGain.gain.setValueAtTime(0.15, c.currentTime + offset);
+        nGain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + offset + 0.03);
+        const nFilter = c.createBiquadFilter();
+        nFilter.type = 'bandpass';
+        nFilter.frequency.value = 3000;
+        noise.connect(nFilter);
+        nFilter.connect(nGain);
+        nGain.connect(m);
+        noise.start(c.currentTime + offset);
       });
     }
 
-    // ─── Gang: deep resonance ───
+    // ─── Gang: triple clack ───
     function playGang() {
       const c = getCtx(); const m = getMaster();
-      const freqs = [150, 200, 300];
-      freqs.forEach((f, i) => {
+      // Three sharp clacks
+      [0, 0.06, 0.12].forEach((offset, idx) => {
         const osc = c.createOscillator();
         const gain = c.createGain();
-        osc.type = i === 0 ? 'sine' : 'triangle';
-        osc.frequency.setValueAtTime(f, c.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(f * 0.5, c.currentTime + 0.4);
-        gain.gain.setValueAtTime(0.25, c.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.4);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1200 + idx * 150, c.currentTime + offset);
+        osc.frequency.exponentialRampToValueAtTime(500, c.currentTime + offset + 0.04);
+        gain.gain.setValueAtTime(0.3, c.currentTime + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + offset + 0.07);
         osc.connect(gain);
         gain.connect(m);
-        osc.start(c.currentTime);
-        osc.stop(c.currentTime + 0.4);
+        osc.start(c.currentTime + offset);
+        osc.stop(c.currentTime + offset + 0.07);
       });
+      // Deep resonance
+      const osc2 = c.createOscillator();
+      const gain2 = c.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(300, c.currentTime);
+      osc2.frequency.exponentialRampToValueAtTime(150, c.currentTime + 0.3);
+      gain2.gain.setValueAtTime(0.25, c.currentTime);
+      gain2.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.35);
+      osc2.connect(gain2);
+      gain2.connect(m);
+      osc2.start(c.currentTime);
+      osc2.stop(c.currentTime + 0.35);
     }
 
     // ─── Hu: rising chord + shimmer ───

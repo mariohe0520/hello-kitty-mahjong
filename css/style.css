@@ -401,13 +401,13 @@ body {
 /* Hands */
 .hand { display: flex; gap: 2px; justify-content: center; }
 .hand-bottom {
-  gap: 1px; flex-wrap: nowrap; padding: 2px 0;
+  gap: 3px; flex-wrap: nowrap; padding: 4px 0;
   max-width: 100%; justify-content: center;
 }
 .hand-bottom .tile {
-  width: 28px; min-width: 28px; max-width: 38px;
+  width: 32px; min-width: 32px; max-width: 38px;
   height: auto; aspect-ratio: 3/4;
-  margin-right: -3px; position: relative;
+  margin-right: 0; position: relative;
 }
 .hand-bottom .tile:last-child { margin-right: 0; }
 .hand-bottom .tile.selected {
