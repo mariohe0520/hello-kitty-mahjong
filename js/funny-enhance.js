@@ -129,3 +129,50 @@ window.MahjongFunny = {
 };
 
 console.log("🎉 麻将搞笑增强已加载!");
+
+// 🎮 多人对战房间系统
+const ROOM_SYSTEM = {
+  // 创建房间
+  createRoom: () => {
+    const roomId = Math.random().toString(36).substr(2, 6).toUpperCase();
+    return {
+      id: roomId,
+      players: [],
+      maxPlayers: 4,
+      status: 'waiting'
+    };
+  },
+  
+  // 快速加入动画
+  joinAnimation: (playerName) => {
+    showFunnyCloud(`${playerName}加入了游戏！`);
+  },
+  
+  // 离开动画
+  leaveAnimation: (playerName) => {
+    showFunnyCloud(`${playerName}跑路了！`);
+  }
+};
+
+// 搞笑聊天表情包
+const CHAT_EMOJIS = [
+  "(╯°□°)╯︵ ┻━┻",  // 掀桌
+  "(┻━┻) ︵﻿ ¯\_(ツ)_/﻿ ︵ ┻━┻", // 再次掀桌
+  "( ˘ ³˘)♥", // 爱心
+  "ヽ(>∀<☆)ノ", // 得意
+  "(⊙_⊙)", // 惊讶
+  "(-_-)", // 无语
+  "ψ(｀∇´)ψ", // 抓狂
+  "(✧ω✧)", // 星星眼
+  "(／≧ω＼)", // 害羞
+  "∠(｀∇´) 」", // 奸笑
+];
+
+// 随机聊天表情
+function randomChatEmoji() {
+  return CHAT_EMOJIS[Math.floor(Math.random() * CHAT_EMOJIS.length)];
+}
+
+// 导出
+window.RoomSystem = ROOM_SYSTEM;
+window.ChatEmojis = CHAT_EMOJIS;
