@@ -2,120 +2,191 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>🎀 Hello Kitty 麻将</title>
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { 
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-.logo { font-size: 80px; margin-bottom: 20px; }
-h1 { color: #ff6b9d; font-size: 36px; margin-bottom: 10px; text-shadow: 2px 2px white; }
-.btn {
-  background: linear-gradient(135deg, #ff6b9d, #c44569);
-  color: white;
-  border: none;
-  padding: 20px 60px;
-  font-size: 24px;
-  border-radius: 50px;
-  margin: 10px;
-  cursor: pointer;
-  box-shadow: 0 10px 30px rgba(255,107,157,0.4);
-  transition: transform 0.2s;
-}
-.btn:hover { transform: scale(1.05); }
-.btn:active { transform: scale(0.95); }
-.game { display: none; width: 100%; max-width: 400px; padding: 20px; }
-.table {
-  background: linear-gradient(135deg, #2d3436, #636e72);
-  border-radius: 20px;
-  min-height: 400px;
-  padding: 20px;
-  position: relative;
-}
-.tile {
-  width: 40px;
-  height: 56px;
-  background: linear-gradient(135deg, #fff, #f0f0f0);
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin: 4px;
-  font-size: 24px;
-  box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
-  cursor: pointer;
-}
-.tile:active { transform: translateY(2px); }
-.player { color: white; margin: 10px 0; font-size: 18px; }
-.score { color: #ffd700; font-weight: bold; }
-</style>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/tiles.css">
+<link rel="stylesheet" href="css/animations.css">
 </head>
 <body>
-<div class="logo">🎀</div>
-<h1>Hello Kitty 麻将</h1>
-<div id="menu">
-  <button class="btn" onclick="startGame()">🎮 开始游戏</button>
-  <button class="btn" style="background: linear-gradient(135deg, #6c5ce7, #a55eea);">🏆 排行榜</button>
-</div>
-<div class="game" id="game">
-  <div class="player">👤 玩家1 <span class="score">25000分</span></div>
-  <div class="table" id="table"></div>
-  <div style="margin-top: 20px;">
-    <button class="btn" style="font-size: 16px; padding: 10px 30px;" onclick="back()">← 返回</button>
+
+<!-- ===== SPLASH SCREEN ===== -->
+<div id="splash" class="splash">
+  <div class="splash-content">
+    <div class="splash-logo">🎀</div>
+    <h1 class="splash-title">Hello Kitty 麻将</h1>
+    <p class="splash-sub">可爱又好玩的麻将世界</p>
+    <div class="splash-loading">加载中...</div>
   </div>
 </div>
-<script>
-const tiles = ['🀇','🀈','🀉','🀊','🀋','🀌','🀍','🀎','🀏',
-                '🀐','🀑','🀒','🀓','🀔','🀕','🀖','🀗','🀘',
-                '🀙','🀚','🀛','🀜','🀝','🀞','🀟','🀠','🀡',
-                '🀀','🀁','🀂','🀃','🀆','🀅','🀄'];
 
-let myTiles = [];
-let playerScore = 25000;
+<!-- ===== HOME PAGE ===== -->
+<div id="home" class="page" style="display:none">
+  <div id="home-content" class="page-scroll"></div>
+</div>
 
-function startGame() {
-  document.getElementById('menu').style.display = 'none';
-  document.getElementById('game').style.display = 'block';
-  
-  // 发牌
-  myTiles = [];
-  for (let i = 0; i < 13; i++) {
-    myTiles.push(tiles[Math.floor(Math.random() * tiles.length)]);
-  }
-  renderTiles();
-}
+<!-- ===== GAME TABLE ===== -->
+<div id="game" class="page" style="display:none">
+  <div class="game-topbar">
+    <button class="icon-btn" onclick="App.backToMenu()">←</button>
+    <div class="round-info">
+      <span id="wind-indicator">东风</span>
+      <span id="round-number">第1局</span>
+    </div>
+    <button class="icon-btn" onclick="App.toggleSettings()">⚙</button>
+  </div>
 
-function renderTiles() {
-  const table = document.getElementById('table');
-  table.innerHTML = '<div class="player">🎯 轮到你打牌</div>';
-  myTiles.forEach((t, i) => {
-    const tile = document.createElement('span');
-    tile.className = 'tile';
-    tile.textContent = t;
-    tile.onclick = () => {
-      myTiles.splice(i, 1);
-      // 摸新牌
-      myTiles.push(tiles[Math.floor(Math.random() * tiles.length)]);
-      renderTiles();
-    };
-    table.appendChild(tile);
-  });
-  
-  // 分数
-  table.innerHTML += `<div class="player">💰 分数: <span class="score">${playerScore}</span></div>`;
-}
+  <div class="table-container">
+    <div class="mahjong-table" id="mahjong-table">
+      <!-- Top player -->
+      <div class="player-area player-top" id="player-top">
+        <div class="player-label">
+          <span class="player-avatar" id="avatar-top">🐻</span>
+          <span class="player-name" id="name-top">对家</span>
+          <span class="player-score" id="score-top">25000</span>
+        </div>
+        <div class="hand hand-top" id="hand-top"></div>
+      </div>
 
-function back() {
-  document.getElementById('menu').style.display = 'block';
-  document.getElementById('game').style.display = 'none';
-}
-</script>
+      <div class="table-middle">
+        <!-- Left player -->
+        <div class="player-area player-left" id="player-left">
+          <div class="player-label">
+            <span class="player-avatar" id="avatar-left">🐰</span>
+            <span class="player-name" id="name-left">上家</span>
+          </div>
+          <div class="hand hand-side" id="hand-left"></div>
+        </div>
+
+        <!-- Center -->
+        <div class="table-center">
+          <div class="discard-pool" id="discard-pool"></div>
+          <div class="remaining-tiles">
+            <span id="tiles-remaining">136</span>
+            <small>余牌</small>
+          </div>
+        </div>
+
+        <!-- Right player -->
+        <div class="player-area player-right" id="player-right">
+          <div class="player-label">
+            <span class="player-name" id="name-right">下家</span>
+            <span class="player-avatar" id="avatar-right">🦊</span>
+          </div>
+          <div class="hand hand-side" id="hand-right"></div>
+        </div>
+      </div>
+
+      <!-- Bottom player (you) -->
+      <div class="player-area player-bottom" id="player-bottom">
+        <div class="hand hand-bottom" id="hand-bottom"></div>
+        <div class="player-label">
+          <span class="player-avatar">🎀</span>
+          <span class="player-name">我</span>
+          <span class="player-score" id="my-score">25000</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action buttons -->
+  <div class="action-bar" id="action-bar" style="display:none">
+    <button class="action-btn btn-pass" onclick="Game.pass()">过</button>
+    <button class="action-btn btn-chi" onclick="Game.chi()" style="display:none">吃</button>
+    <button class="action-btn btn-peng" onclick="Game.peng()" style="display:none">碰</button>
+    <button class="action-btn btn-gang" onclick="Game.gang()" style="display:none">杠</button>
+    <button class="action-btn btn-hu" onclick="Game.hu()" style="display:none">胡!</button>
+  </div>
+</div>
+
+<!-- ===== STORY / CAMPAIGN ===== -->
+<div id="story" class="page" style="display:none">
+  <div class="page-header">
+    <h2>📖 麻将物语</h2>
+  </div>
+  <div id="story-content" class="page-scroll"></div>
+</div>
+
+<!-- ===== COLLECTION ===== -->
+<div id="collection" class="page" style="display:none">
+  <div class="page-header">
+    <h2>🎨 收藏</h2>
+  </div>
+  <div id="collection-content" class="page-scroll"></div>
+</div>
+
+<!-- ===== ACHIEVEMENTS ===== -->
+<div id="achievements" class="page" style="display:none">
+  <div class="page-header">
+    <h2>🏆 成就</h2>
+  </div>
+  <div id="achievements-content" class="page-scroll"></div>
+</div>
+
+<!-- ===== TUTORIAL ===== -->
+<div id="tutorial" class="page" style="display:none">
+  <div class="tutorial-header">
+    <button class="icon-btn" onclick="App.backToMenu()">←</button>
+    <h2>麻将新手教学</h2>
+  </div>
+  <div class="tutorial-content" id="tutorial-content">
+    <div class="tutorial-step" data-step="1"></div>
+    <div class="tutorial-nav">
+      <button class="btn-nav" onclick="Tutorial.prev()">上一步</button>
+      <span id="tutorial-progress">1/6</span>
+      <button class="btn-nav" onclick="Tutorial.next()">下一步</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== WIN SCREEN ===== -->
+<div id="win-screen" class="modal" style="display:none">
+  <div class="modal-content win-content">
+    <div class="win-title">🎉 胡牌！</div>
+    <div class="win-hand" id="win-hand"></div>
+    <div class="win-score" id="win-score"></div>
+    <div class="win-fans" id="win-fans"></div>
+    <button class="menu-btn btn-pink" onclick="App.nextRound()">下一局</button>
+    <button class="menu-btn btn-gray" onclick="App.backToMenu()">返回主页</button>
+  </div>
+</div>
+
+<!-- ===== BOTTOM TAB BAR ===== -->
+<div id="tab-bar" class="tab-bar" style="display:none">
+  <div class="tab-item active" data-page="home">
+    <span class="tab-icon">🏠</span>
+    <span class="tab-label">主页</span>
+  </div>
+  <div class="tab-item" data-page="game" onclick="App.startGame('beijing')">
+    <span class="tab-icon">🎮</span>
+    <span class="tab-label">对局</span>
+  </div>
+  <div class="tab-item" data-page="story">
+    <span class="tab-icon">📖</span>
+    <span class="tab-label">物语</span>
+  </div>
+  <div class="tab-item" data-page="collection">
+    <span class="tab-icon">🎨</span>
+    <span class="tab-label">收藏</span>
+  </div>
+  <div class="tab-item" data-page="achievements">
+    <span class="tab-icon">🏆</span>
+    <span class="tab-label">成就</span>
+  </div>
+</div>
+
+<script src="js/tiles.js"></script>
+<script src="js/rules-beijing.js"></script>
+<script src="js/rules-sichuan.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/characters.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/game.js"></script>
+<script src="js/campaign.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/tutorial.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
