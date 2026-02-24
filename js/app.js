@@ -451,6 +451,8 @@ const App = (() => {
 
   function backToMenu() {
     if (Game.getState()) Game.destroy();
+    // Stop BGM when returning to menu
+    if (typeof Sound !== 'undefined' && Sound.stopBGM) Sound.stopBGM();
     const winScreen = document.getElementById('win-screen');
     if (winScreen) winScreen.style.display = 'none';
     navigateTo('home');
@@ -599,6 +601,10 @@ const App = (() => {
 
   function init() {
     getSettings();
+    // Initialize real sound effects
+    Game.Sound.init().then(() => {
+      console.log('🎵 Mahjong sounds loaded successfully');
+    }).catch(e => console.warn('Sound init failed:', e));
     Game.Sound.setMuted(!settings.soundEnabled);
 
     // Tab bar events

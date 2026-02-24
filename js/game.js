@@ -36,7 +36,7 @@ const Game = (() => {
   }
 
   // ╔═══════════════════════════════════════════════════════════╗
-  // ║  SOUND ENGINE — Web Audio API Synthesizer                ║
+  // ║  SOUND ENGINE — Real Mahjong Audio Samples               ║
   // ╚═══════════════════════════════════════════════════════════╝
 
   const Sound = (() => {
@@ -44,15 +44,62 @@ const Game = (() => {
     let masterGain = null;
     let muted = false;
     let volume = 0.6;
+    
+    // Real audio buffers
+    const buffers = {};
+    const SOUND_FILES = {
+      tap: ['tap_1.wav', 'tap_2.wav', 'tap_3.wav'],
+      place: ['place_1.wav', 'place_2.wav', 'place_3.wav'],
+      shuffle: 'shuffle.wav',
+      win: 'win.wav'
+    };
 
-    function getCtx() {
+    async function init() {
       if (!ctx) {
         ctx = new (window.AudioContext || window.webkitAudioContext)();
         masterGain = ctx.createGain();
         masterGain.gain.value = volume;
         masterGain.connect(ctx.destination);
       }
-      if (ctx.state === 'suspended') ctx.resume();
+      if (ctx.state === 'suspended') await ctx.resume();
+      
+      // Load all sound files
+      const basePath = 'assets/sounds/';
+      const loadPromises = [];
+      
+      // Load tap sounds
+      buffers.tap = [];
+      for (const file of SOUND_FILES.tap) {
+        loadPromises.push(loadAudioBuffer(`${basePath}${file}`).then(buf => buffers.tap.push(buf)));
+      }
+      
+      // Load place sounds
+      buffers.place = [];
+      for (const file of SOUND_FILES.place) {
+        loadPromises.push(loadAudioBuffer(`${basePath}${file}`).then(buf => buffers.place.push(buf)));
+      }
+      
+      // Load single sounds
+      loadPromises.push(loadAudioBuffer(`${basePath}${SOUND_FILES.shuffle}`).then(buf => buffers.shuffle = buf));
+      loadPromises.push(loadAudioBuffer(`${basePath}${SOUND_FILES.win}`).then(buf => buffers.win = buf));
+      
+      await Promise.all(loadPromises);
+      console.log('🎵 All mahjong sounds loaded');
+    }
+    
+    async function loadAudioBuffer(url) {
+      try {
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        return await ctx.decodeAudioData(arrayBuffer);
+      } catch (e) {
+        console.warn('Failed to load sound:', url, e);
+        return null;
+      }
+    }
+
+    function getCtx() {
+      if (!ctx) init();
       return ctx;
     }
 
@@ -72,232 +119,69 @@ const Game = (() => {
     }
 
     function isMuted() { return muted; }
+    
+    function playBuffer(buffer, time = 0) {
+      if (!buffer || muted) return;
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      const gain = ctx.createGain();
+      gain.gain.value = volume;
+      source.connect(gain);
+      gain.connect(masterGain);
+      source.start(ctx.currentTime + time);
+    }
 
-    // ─── Tile tap: REALISTIC mahjong clack (deep wooden sound) ───
+    // ─── Tile tap: REAL mahjong clack ───
     function playTap() {
-      const c = getCtx(); const m = getMaster();
-      // Deep wooden clack - lower frequencies
-      [0, 0.012].forEach(offset => {
-        const osc = c.createOscillator();
-        const gain = c.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(350 + Math.random() * 100, c.currentTime + offset);
-        osc.frequency.exponentialRampToValueAtTime(150, c.currentTime + offset + 0.015);
-        gain.gain.setValueAtTime(0.4, c.currentTime + offset);
-        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + offset + 0.025);
-        osc.connect(gain);
-        gain.connect(m);
-        osc.start(c.currentTime + offset);
-        osc.stop(c.currentTime + offset + 0.025);
-      });
-      // Wood clack noise - quick burst
-      const buf = c.createBuffer(1, c.sampleRate * 0.01, c.sampleRate);
-      const data = buf.getChannelData(0);
-      for (let i = 0; i < data.length; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.03));
+      if (buffers.tap && buffers.tap.length > 0) {
+        // Randomly select one of the tap sounds
+        const randomTap = buffers.tap[Math.floor(Math.random() * buffers.tap.length)];
+        playBuffer(randomTap);
       }
-      const noise = c.createBufferSource();
-      noise.buffer = buf;
-      const nGain = c.createGain();
-      nGain.gain.setValueAtTime(0.25, c.currentTime);
-      nGain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.015);
-      const nFilter = c.createBiquadFilter();
-      nFilter.type = 'bandpass';
-      nFilter.frequency.value = 800;
-      nFilter.Q.value = 1;
-      noise.connect(nFilter);
-      nFilter.connect(nGain);
-      nGain.connect(m);
-      noise.start(c.currentTime);
     }
 
-    // ─── Tile place: REALISTIC deep wooden clack ───
+    // ─── Tile place: REAL mahjong place sound ───
     function playPlace() {
-      const c = getCtx(); const m = getMaster();
-      
-      // Deep wooden thump
-      const osc1 = c.createOscillator();
-      const gain1 = c.createGain();
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(280, c.currentTime);
-      osc1.frequency.exponentialRampToValueAtTime(100, c.currentTime + 0.02);
-      gain1.gain.setValueAtTime(0.5, c.currentTime);
-      gain1.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.04);
-      osc1.connect(gain1);
-      gain1.connect(m);
-      osc1.start(c.currentTime);
-      osc1.stop(c.currentTime + 0.04);
-
-      // Table resonance
-      const osc2 = c.createOscillator();
-      const gain2 = c.createGain();
-      osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(120, c.currentTime);
-      osc2.frequency.exponentialRampToValueAtTime(60, c.currentTime + 0.06);
-      gain2.gain.setValueAtTime(0.3, c.currentTime);
-      gain2.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.08);
-      osc2.connect(gain2);
-      gain2.connect(m);
-      osc2.start(c.currentTime);
-      osc2.stop(c.currentTime + 0.08);
-
-      // Impact noise
-      const buf = c.createBuffer(1, c.sampleRate * 0.02, c.sampleRate);
-      const data = buf.getChannelData(0);
-      for (let i = 0; i < data.length; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.04));
+      if (buffers.place && buffers.place.length > 0) {
+        // Randomly select one of the place sounds
+        const randomPlace = buffers.place[Math.floor(Math.random() * buffers.place.length)];
+        playBuffer(randomPlace);
       }
-      const noise = c.createBufferSource();
-      noise.buffer = buf;
-      const nGain = c.createGain();
-      nGain.gain.setValueAtTime(0.35, c.currentTime);
-      nGain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.025);
-      const nFilter = c.createBiquadFilter();
-      nFilter.type = 'bandpass';
-      nFilter.frequency.value = 1200;
-      nFilter.Q.value = 1.5;
-      noise.connect(nFilter);
-      nFilter.connect(nGain);
-      nGain.connect(m);
-      noise.start(c.currentTime);
+    }
+    
+    // ─── Shuffle sound ───
+    function playShuffle() {
+      playBuffer(buffers.shuffle);
+    }
+    
+    // ─── Win celebration ───
+    function playWin() {
+      playBuffer(buffers.win);
     }
 
-    // ─── Peng: double clack (lower, more realistic) ───
+    // ─── Peng: double clack ───
     function playPeng() {
-      const c = getCtx(); const m = getMaster();
-      // Two sharp clacks - lower frequency
-      [0, 0.06].forEach((offset, idx) => {
-        // Main tone
-        const osc = c.createOscillator();
-        const gain = c.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(500 + idx * 80, c.currentTime + offset);
-        osc.frequency.exponentialRampToValueAtTime(250, c.currentTime + offset + 0.035);
-        gain.gain.setValueAtTime(0.4, c.currentTime + offset);
-        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + offset + 0.06);
-        osc.connect(gain);
-        gain.connect(m);
-        osc.start(c.currentTime + offset);
-        osc.stop(c.currentTime + offset + 0.06);
-        
-        // Noise burst
-        const buf = c.createBuffer(1, c.sampleRate * 0.02, c.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < data.length; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.05));
-        }
-        const noise = c.createBufferSource();
-        noise.buffer = buf;
-        const nGain = c.createGain();
-        nGain.gain.setValueAtTime(0.2, c.currentTime + offset);
-        nGain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + offset + 0.025);
-        const nFilter = c.createBiquadFilter();
-        nFilter.type = 'bandpass';
-        nFilter.frequency.value = 1200;
-        noise.connect(nFilter);
-        nFilter.connect(nGain);
-        nGain.connect(m);
-        noise.start(c.currentTime + offset);
-      });
+      // Play two place sounds with slight delay
+      playPlace();
+      setTimeout(() => playPlace(), 80);
     }
 
-    // ─── Gang: triple clack (lower, deeper) ───
+    // ─── Gang: triple clack ───
     function playGang() {
-      const c = getCtx(); const m = getMaster();
-      // Three sharp clacks - lower frequency
-      [0, 0.06, 0.12].forEach((offset, idx) => {
-        const osc = c.createOscillator();
-        const gain = c.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(450 + idx * 60, c.currentTime + offset);
-        osc.frequency.exponentialRampToValueAtTime(200, c.currentTime + offset + 0.035);
-        gain.gain.setValueAtTime(0.3, c.currentTime + offset);
-        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + offset + 0.07);
-        osc.connect(gain);
-        gain.connect(m);
-        osc.start(c.currentTime + offset);
-        osc.stop(c.currentTime + offset + 0.07);
-      });
-      // Deep resonance
-      const osc2 = c.createOscillator();
-      const gain2 = c.createGain();
-      osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(300, c.currentTime);
-      osc2.frequency.exponentialRampToValueAtTime(150, c.currentTime + 0.3);
-      gain2.gain.setValueAtTime(0.25, c.currentTime);
-      gain2.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.35);
-      osc2.connect(gain2);
-      gain2.connect(m);
-      osc2.start(c.currentTime);
-      osc2.stop(c.currentTime + 0.35);
+      // Play three place sounds
+      playPlace();
+      setTimeout(() => playPlace(), 70);
+      setTimeout(() => playPlace(), 140);
     }
 
-    // ─── Hu: rising chord + shimmer ───
+    // ─── Hu: use real win sound ───
     function playHu() {
-      const c = getCtx(); const m = getMaster();
-      const notes = [261.6, 329.6, 392.0, 523.3]; // C4-E4-G4-C5
-      notes.forEach((f, i) => {
-        const osc = c.createOscillator();
-        const gain = c.createGain();
-        osc.type = 'sine';
-        const start = c.currentTime + i * 0.12;
-        osc.frequency.setValueAtTime(f, start);
-        gain.gain.setValueAtTime(0, start);
-        gain.gain.linearRampToValueAtTime(0.2, start + 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.8);
-        osc.connect(gain);
-        gain.connect(m);
-        osc.start(start);
-        osc.stop(start + 0.8);
-      });
-
-      // Shimmer: high frequency noise burst
-      setTimeout(() => {
-        const c2 = getCtx();
-        const buf = c2.createBuffer(1, c2.sampleRate * 0.3, c2.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < data.length; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.3)) * 0.3;
-        }
-        const noise = c2.createBufferSource();
-        noise.buffer = buf;
-        const filter = c2.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.value = 6000;
-        filter.Q.value = 2;
-        const nGain = c2.createGain();
-        nGain.gain.setValueAtTime(0.08, c2.currentTime);
-        nGain.gain.exponentialRampToValueAtTime(0.001, c2.currentTime + 0.3);
-        noise.connect(filter);
-        filter.connect(nGain);
-        nGain.connect(getMaster());
-        noise.start(c2.currentTime);
-      }, 400);
+      playWin();
     }
 
-    // ─── Draw: soft slide ───
+    // ─── Draw: soft tap ───
     function playDraw() {
-      const c = getCtx(); const m = getMaster();
-      const buf = c.createBuffer(1, c.sampleRate * 0.15, c.sampleRate);
-      const data = buf.getChannelData(0);
-      for (let i = 0; i < data.length; i++) {
-        const t = i / c.sampleRate;
-        data[i] = (Math.random() * 2 - 1) * 0.15 * Math.sin(t * 800) * Math.exp(-t * 20);
-      }
-      const noise = c.createBufferSource();
-      noise.buffer = buf;
-      const filter = c.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(2000, c.currentTime);
-      filter.frequency.linearRampToValueAtTime(800, c.currentTime + 0.15);
-      filter.Q.value = 1;
-      const gain = c.createGain();
-      gain.gain.setValueAtTime(0.2, c.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.15);
-      noise.connect(filter);
-      filter.connect(gain);
-      gain.connect(m);
-      noise.start(c.currentTime);
+      playTap();
     }
 
     // ─── Chi: light tap ───
@@ -316,9 +200,64 @@ const Game = (() => {
       osc.stop(c.currentTime + 0.12);
     }
 
+    // ═══ BGM System — Soft ambient background music ═══
+    let bgmOscillators = [];
+    let bgmInterval = null;
+    let isPlayingBGM = false;
+    
+    function startBGM() {
+      if (isPlayingBGM || muted) return;
+      isPlayingBGM = true;
+      
+      const c = getCtx();
+      const m = getMaster();
+      
+      // Create gentle pentatonic notes
+      const notes = [523.25, 587.33, 659.25, 783.99, 880.00]; // C, D, E, G, A
+      
+      bgmInterval = setInterval(() => {
+        if (muted || !isPlayingBGM) return;
+        
+        const freq = notes[Math.floor(Math.random() * notes.length)];
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.value = freq / 2; // Lower octave for background
+        
+        gain.gain.setValueAtTime(0, c.currentTime);
+        gain.gain.linearRampToValueAtTime(0.03, c.currentTime + 0.5);
+        gain.gain.setValueAtTime(0.03, c.currentTime + 2);
+        gain.gain.linearRampToValueAtTime(0, c.currentTime + 3);
+        
+        osc.connect(gain);
+        gain.connect(m);
+        
+        osc.start(c.currentTime);
+        osc.stop(c.currentTime + 3);
+        
+        bgmOscillators.push(osc);
+      }, 2500); // Play a note every 2.5 seconds
+    }
+    
+    function stopBGM() {
+      isPlayingBGM = false;
+      if (bgmInterval) {
+        clearInterval(bgmInterval);
+        bgmInterval = null;
+      }
+      bgmOscillators.forEach(osc => {
+        try { osc.stop(); } catch(e) {}
+      });
+      bgmOscillators = [];
+    }
+
     return {
+      init,
       getCtx, setVolume, setMuted, isMuted,
       playTap, playPlace, playPeng, playGang, playHu, playDraw, playChi,
+      playShuffle, playWin,
+      startBGM, stopBGM
     };
   })();
 
@@ -874,6 +813,9 @@ const Game = (() => {
     preloadImages();
     Particles.init();
     Particles.start();
+    
+    // Start BGM
+    Sound.startBGM();
 
     state = createInitialState(mode);
 
