@@ -401,13 +401,13 @@ body {
 /* Hands */
 .hand { display: flex; gap: 2px; justify-content: center; }
 .hand-bottom {
-  gap: 3px; flex-wrap: nowrap; padding: 4px 0;
+  gap: 1px; flex-wrap: nowrap; padding: 2px 0;
   max-width: 100%; justify-content: center;
 }
 .hand-bottom .tile {
-  width: 32px; min-width: 32px; max-width: 38px;
+  width: 28px; min-width: 28px; max-width: 38px;
   height: auto; aspect-ratio: 3/4;
-  margin-right: 0; position: relative;
+  margin-right: -3px; position: relative;
 }
 .hand-bottom .tile:last-child { margin-right: 0; }
 .hand-bottom .tile.selected {
@@ -735,6 +735,40 @@ body {
   .hand-bottom .tile { max-width: 44px; }
   .player-left, .player-right { width: 56px; }
 }
+
+/* ═══ SKILLS PREVIEW (Home Page) ═══ */
+.skills-preview {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.skill-preview-card {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px; background: var(--card-bg);
+  border-radius: 12px; border: 1px solid;
+  transition: all 0.2s;
+}
+.skill-preview-card.locked { opacity: 0.4; }
+.skill-preview-icon { font-size: 24px; flex-shrink: 0; }
+.skill-preview-info { min-width: 0; }
+.skill-preview-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.skill-preview-desc { font-size: 10px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ═══ POST-GAME ANALYSIS ═══ */
+.analysis-section {
+  margin-top: 16px; padding: 12px; background: rgba(255,255,255,0.05);
+  border-radius: 12px; text-align: left;
+}
+.analysis-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--pink); }
+.analysis-item {
+  display: flex; align-items: center; gap: 8px; padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px;
+}
+.analysis-item:last-child { border-bottom: none; }
+.analysis-icon { font-size: 18px; }
+.analysis-label { flex: 1; color: var(--text-light); }
+.analysis-value { font-weight: 700; }
+.analysis-good { color: #22c55e; }
+.analysis-bad { color: #ef4444; }
+.analysis-neutral { color: #eab308; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

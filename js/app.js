@@ -201,6 +201,25 @@ const App = (() => {
         </button>
       </div>
 
+      <!-- Character Skills Preview -->
+      ${typeof Skills !== 'undefined' ? `<div class="home-section">
+        <div class="section-title">⚡ 角色技能</div>
+        <div class="skills-preview">
+          ${Object.entries(Skills.SKILLS).map(([charId, skill]) => {
+            const friendship = typeof Storage !== 'undefined' ? Storage.getFriendship() : {};
+            const fl = friendship[charId]?.level || 0;
+            const unlocked = fl >= skill.friendshipUnlock;
+            return `<div class="skill-preview-card ${unlocked ? '' : 'locked'}" style="border-color:${skill.color}40">
+              <span class="skill-preview-icon">${unlocked ? skill.icon : '🔒'}</span>
+              <div class="skill-preview-info">
+                <div class="skill-preview-name" style="color:${unlocked ? skill.color : '#666'}">${unlocked ? skill.name : '???'}</div>
+                <div class="skill-preview-desc">${unlocked ? skill.desc : `好感度Lv.${skill.friendshipUnlock}解锁`}</div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>` : ''}
+
       <!-- Quick Actions -->
       <div class="home-section">
         <div class="home-quick-actions">
@@ -451,8 +470,6 @@ const App = (() => {
 
   function backToMenu() {
     if (Game.getState()) Game.destroy();
-    // Stop BGM when returning to menu
-    if (typeof Sound !== 'undefined' && Sound.stopBGM) Sound.stopBGM();
     const winScreen = document.getElementById('win-screen');
     if (winScreen) winScreen.style.display = 'none';
     navigateTo('home');
@@ -601,10 +618,6 @@ const App = (() => {
 
   function init() {
     getSettings();
-    // Initialize real sound effects
-    Game.Sound.init().then(() => {
-      console.log('🎵 Mahjong sounds loaded successfully');
-    }).catch(e => console.warn('Sound init failed:', e));
     Game.Sound.setMuted(!settings.soundEnabled);
 
     // Tab bar events

@@ -47,10 +47,11 @@
 .tile-img { display: none; }
 @media (min-width: 768px) {
   .tile-img {
-    position: absolute; top: 5%; left: 10%;
-    width: 80%; height: 80%; object-fit: contain;
-    display: block; pointer-events: none; z-index: 1;
-    opacity: 0.85;
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%; object-fit: contain;
+    display: block; pointer-events: none; z-index: 2;
+    background: linear-gradient(175deg, #fffef8, #f5f0e0 40%, #e8e0c8);
+    border-radius: inherit; padding: 3px; box-sizing: border-box;
   }
 }
 

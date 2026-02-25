@@ -112,3 +112,99 @@
   50% { transform: translateY(-20px) scale(1.3); }
   100% { transform: translateY(0) scale(1); }
 }
+
+/* ═══ SKILL SYSTEM ANIMATIONS ═══ */
+@keyframes skillPulse {
+  0%, 100% { box-shadow: 0 2px 12px currentColor; }
+  50% { box-shadow: 0 4px 20px currentColor, 0 0 30px currentColor; }
+}
+
+@keyframes skillFlash {
+  0% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+@keyframes skillPopIn {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+  80% { transform: translate(-50%, -50%) scale(0.95); }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+/* Tile danger indicator glow */
+.tile-danger-indicator {
+  animation: dangerPulse 1.5s ease-in-out infinite;
+}
+@keyframes dangerPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.9; }
+}
+
+/* ═══ ACTION CALLIGRAPHY — Full-screen Chinese brush-stroke text ═══ */
+.action-calligraphy {
+  position: fixed;
+  top: 45%; left: 50%;
+  transform: translate(-50%, -50%) scale(0) rotate(-10deg);
+  font-size: 72px;
+  font-weight: 900;
+  z-index: 300;
+  pointer-events: none;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  animation: calligraphyStrike 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+.action-calligraphy.action-hu {
+  font-size: 96px;
+  animation: calligraphyHu 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes calligraphyStrike {
+  0% { transform: translate(-50%, -50%) scale(0) rotate(-15deg); opacity: 0; }
+  30% { transform: translate(-50%, -50%) scale(1.4) rotate(3deg); opacity: 1; }
+  60% { transform: translate(-50%, -50%) scale(1.05) rotate(-1deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0.9) rotate(0); opacity: 0; }
+}
+@keyframes calligraphyHu {
+  0% { transform: translate(-50%, -50%) scale(0) rotate(-20deg); opacity: 0; }
+  25% { transform: translate(-50%, -50%) scale(1.6) rotate(5deg); opacity: 1; }
+  50% { transform: translate(-50%, -50%) scale(1.15) rotate(-2deg); opacity: 1; }
+  75% { transform: translate(-50%, -50%) scale(1.05) rotate(0); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1) rotate(0); opacity: 0; }
+}
+
+/* Tile discard animation */
+.tile.discarding {
+  animation: tileDiscard 0.3s ease-out;
+}
+@keyframes tileDiscard {
+  0% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-20px) scale(1.15); }
+  100% { transform: translateY(0) scale(0.9); opacity: 0.5; }
+}
+
+/* Winning tile glow */
+.tile.winning {
+  box-shadow: 0 0 12px rgba(245,197,24,0.5);
+}
+
+/* Remaining ring */
+.remaining-ring {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.remaining-ring svg {
+  transform: rotate(-90deg);
+}
+.ring-text {
+  position: absolute;
+  font-size: 16px; font-weight: 900; color: #f5c518;
+}
+.ring-label {
+  position: absolute; bottom: -4px;
+  font-size: 9px; color: rgba(255,255,255,0.5);
+}
+
+/* Shake animation */
+@keyframes shake {
+  0%,100% { transform: translate(0,0); }
+  10%,30%,50%,70%,90% { transform: translate(calc(-1 * var(--shake-intensity, 4px)),0); }
+  20%,40%,60%,80% { transform: translate(var(--shake-intensity, 4px),0); }
+}

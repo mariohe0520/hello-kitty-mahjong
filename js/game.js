@@ -36,7 +36,7 @@ const Game = (() => {
   }
 
   // ╔═══════════════════════════════════════════════════════════╗
-  // ║  SOUND ENGINE — Real Mahjong Audio Samples               ║
+  // ║  SOUND ENGINE — Web Audio API Synthesizer                ║
   // ╚═══════════════════════════════════════════════════════════╝
 
   const Sound = (() => {
@@ -44,62 +44,15 @@ const Game = (() => {
     let masterGain = null;
     let muted = false;
     let volume = 0.6;
-    
-    // Real audio buffers
-    const buffers = {};
-    const SOUND_FILES = {
-      tap: ['tap_1.wav', 'tap_2.wav', 'tap_3.wav'],
-      place: ['place_1.wav', 'place_2.wav', 'place_3.wav'],
-      shuffle: 'shuffle.wav',
-      win: 'win.wav'
-    };
 
-    async function init() {
+    function getCtx() {
       if (!ctx) {
         ctx = new (window.AudioContext || window.webkitAudioContext)();
         masterGain = ctx.createGain();
         masterGain.gain.value = volume;
         masterGain.connect(ctx.destination);
       }
-      if (ctx.state === 'suspended') await ctx.resume();
-      
-      // Load all sound files
-      const basePath = 'assets/sounds/';
-      const loadPromises = [];
-      
-      // Load tap sounds
-      buffers.tap = [];
-      for (const file of SOUND_FILES.tap) {
-        loadPromises.push(loadAudioBuffer(`${basePath}${file}`).then(buf => buffers.tap.push(buf)));
-      }
-      
-      // Load place sounds
-      buffers.place = [];
-      for (const file of SOUND_FILES.place) {
-        loadPromises.push(loadAudioBuffer(`${basePath}${file}`).then(buf => buffers.place.push(buf)));
-      }
-      
-      // Load single sounds
-      loadPromises.push(loadAudioBuffer(`${basePath}${SOUND_FILES.shuffle}`).then(buf => buffers.shuffle = buf));
-      loadPromises.push(loadAudioBuffer(`${basePath}${SOUND_FILES.win}`).then(buf => buffers.win = buf));
-      
-      await Promise.all(loadPromises);
-      console.log('🎵 All mahjong sounds loaded');
-    }
-    
-    async function loadAudioBuffer(url) {
-      try {
-        const response = await fetch(url);
-        const arrayBuffer = await response.arrayBuffer();
-        return await ctx.decodeAudioData(arrayBuffer);
-      } catch (e) {
-        console.warn('Failed to load sound:', url, e);
-        return null;
-      }
-    }
-
-    function getCtx() {
-      if (!ctx) init();
+      if (ctx.state === 'suspended') ctx.resume();
       return ctx;
     }
 
@@ -119,69 +72,166 @@ const Game = (() => {
     }
 
     function isMuted() { return muted; }
-    
-    function playBuffer(buffer, time = 0) {
-      if (!buffer || muted) return;
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      const gain = ctx.createGain();
-      gain.gain.value = volume;
-      source.connect(gain);
-      gain.connect(masterGain);
-      source.start(ctx.currentTime + time);
-    }
 
-    // ─── Tile tap: REAL mahjong clack ───
+    // ─── Tile tap: bamboo click ───
     function playTap() {
-      if (buffers.tap && buffers.tap.length > 0) {
-        // Randomly select one of the tap sounds
-        const randomTap = buffers.tap[Math.floor(Math.random() * buffers.tap.length)];
-        playBuffer(randomTap);
-      }
+      const c = getCtx(); const m = getMaster();
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      const filter = c.createBiquadFilter();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(1000 + Math.random() * 200, c.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(600, c.currentTime + 0.04);
+      filter.type = 'highpass';
+      filter.frequency.value = 800;
+      gain.gain.setValueAtTime(0.3, c.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.08);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(m);
+      osc.start(c.currentTime);
+      osc.stop(c.currentTime + 0.08);
     }
 
-    // ─── Tile place: REAL mahjong place sound ───
+    // ─── Tile place: deep thud ───
     function playPlace() {
-      if (buffers.place && buffers.place.length > 0) {
-        // Randomly select one of the place sounds
-        const randomPlace = buffers.place[Math.floor(Math.random() * buffers.place.length)];
-        playBuffer(randomPlace);
+      const c = getCtx(); const m = getMaster();
+      // Body thud
+      const osc1 = c.createOscillator();
+      const gain1 = c.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(400, c.currentTime);
+      osc1.frequency.exponentialRampToValueAtTime(150, c.currentTime + 0.1);
+      gain1.gain.setValueAtTime(0.35, c.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.15);
+      osc1.connect(gain1);
+      gain1.connect(m);
+      osc1.start(c.currentTime);
+      osc1.stop(c.currentTime + 0.15);
+
+      // Impact noise
+      const buf = c.createBuffer(1, c.sampleRate * 0.05, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.15));
       }
-    }
-    
-    // ─── Shuffle sound ───
-    function playShuffle() {
-      playBuffer(buffers.shuffle);
-    }
-    
-    // ─── Win celebration ───
-    function playWin() {
-      playBuffer(buffers.win);
+      const noise = c.createBufferSource();
+      noise.buffer = buf;
+      const nGain = c.createGain();
+      nGain.gain.setValueAtTime(0.15, c.currentTime);
+      nGain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.06);
+      const nFilter = c.createBiquadFilter();
+      nFilter.type = 'lowpass';
+      nFilter.frequency.value = 2000;
+      noise.connect(nFilter);
+      nFilter.connect(nGain);
+      nGain.connect(m);
+      noise.start(c.currentTime);
     }
 
-    // ─── Peng: double clack ───
+    // ─── Peng: double click ───
     function playPeng() {
-      // Play two place sounds with slight delay
-      playPlace();
-      setTimeout(() => playPlace(), 80);
+      const c = getCtx(); const m = getMaster();
+      [0, 0.1].forEach(offset => {
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(900, c.currentTime + offset);
+        osc.frequency.exponentialRampToValueAtTime(500, c.currentTime + offset + 0.05);
+        gain.gain.setValueAtTime(0.3, c.currentTime + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + offset + 0.1);
+        osc.connect(gain);
+        gain.connect(m);
+        osc.start(c.currentTime + offset);
+        osc.stop(c.currentTime + offset + 0.1);
+      });
     }
 
-    // ─── Gang: triple clack ───
+    // ─── Gang: deep resonance ───
     function playGang() {
-      // Play three place sounds
-      playPlace();
-      setTimeout(() => playPlace(), 70);
-      setTimeout(() => playPlace(), 140);
+      const c = getCtx(); const m = getMaster();
+      const freqs = [150, 200, 300];
+      freqs.forEach((f, i) => {
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = i === 0 ? 'sine' : 'triangle';
+        osc.frequency.setValueAtTime(f, c.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(f * 0.5, c.currentTime + 0.4);
+        gain.gain.setValueAtTime(0.25, c.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.4);
+        osc.connect(gain);
+        gain.connect(m);
+        osc.start(c.currentTime);
+        osc.stop(c.currentTime + 0.4);
+      });
     }
 
-    // ─── Hu: use real win sound ───
+    // ─── Hu: rising chord + shimmer ───
     function playHu() {
-      playWin();
+      const c = getCtx(); const m = getMaster();
+      const notes = [261.6, 329.6, 392.0, 523.3]; // C4-E4-G4-C5
+      notes.forEach((f, i) => {
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = 'sine';
+        const start = c.currentTime + i * 0.12;
+        osc.frequency.setValueAtTime(f, start);
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(0.2, start + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.8);
+        osc.connect(gain);
+        gain.connect(m);
+        osc.start(start);
+        osc.stop(start + 0.8);
+      });
+
+      // Shimmer: high frequency noise burst
+      setTimeout(() => {
+        const c2 = getCtx();
+        const buf = c2.createBuffer(1, c2.sampleRate * 0.3, c2.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.3)) * 0.3;
+        }
+        const noise = c2.createBufferSource();
+        noise.buffer = buf;
+        const filter = c2.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 6000;
+        filter.Q.value = 2;
+        const nGain = c2.createGain();
+        nGain.gain.setValueAtTime(0.08, c2.currentTime);
+        nGain.gain.exponentialRampToValueAtTime(0.001, c2.currentTime + 0.3);
+        noise.connect(filter);
+        filter.connect(nGain);
+        nGain.connect(getMaster());
+        noise.start(c2.currentTime);
+      }, 400);
     }
 
-    // ─── Draw: soft tap ───
+    // ─── Draw: soft slide ───
     function playDraw() {
-      playTap();
+      const c = getCtx(); const m = getMaster();
+      const buf = c.createBuffer(1, c.sampleRate * 0.15, c.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        const t = i / c.sampleRate;
+        data[i] = (Math.random() * 2 - 1) * 0.15 * Math.sin(t * 800) * Math.exp(-t * 20);
+      }
+      const noise = c.createBufferSource();
+      noise.buffer = buf;
+      const filter = c.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(2000, c.currentTime);
+      filter.frequency.linearRampToValueAtTime(800, c.currentTime + 0.15);
+      filter.Q.value = 1;
+      const gain = c.createGain();
+      gain.gain.setValueAtTime(0.2, c.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.15);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(m);
+      noise.start(c.currentTime);
     }
 
     // ─── Chi: light tap ───
@@ -200,64 +250,9 @@ const Game = (() => {
       osc.stop(c.currentTime + 0.12);
     }
 
-    // ═══ BGM System — Soft ambient background music ═══
-    let bgmOscillators = [];
-    let bgmInterval = null;
-    let isPlayingBGM = false;
-    
-    function startBGM() {
-      if (isPlayingBGM || muted) return;
-      isPlayingBGM = true;
-      
-      const c = getCtx();
-      const m = getMaster();
-      
-      // Create gentle pentatonic notes
-      const notes = [523.25, 587.33, 659.25, 783.99, 880.00]; // C, D, E, G, A
-      
-      bgmInterval = setInterval(() => {
-        if (muted || !isPlayingBGM) return;
-        
-        const freq = notes[Math.floor(Math.random() * notes.length)];
-        const osc = c.createOscillator();
-        const gain = c.createGain();
-        
-        osc.type = 'sine';
-        osc.frequency.value = freq / 2; // Lower octave for background
-        
-        gain.gain.setValueAtTime(0, c.currentTime);
-        gain.gain.linearRampToValueAtTime(0.03, c.currentTime + 0.5);
-        gain.gain.setValueAtTime(0.03, c.currentTime + 2);
-        gain.gain.linearRampToValueAtTime(0, c.currentTime + 3);
-        
-        osc.connect(gain);
-        gain.connect(m);
-        
-        osc.start(c.currentTime);
-        osc.stop(c.currentTime + 3);
-        
-        bgmOscillators.push(osc);
-      }, 2500); // Play a note every 2.5 seconds
-    }
-    
-    function stopBGM() {
-      isPlayingBGM = false;
-      if (bgmInterval) {
-        clearInterval(bgmInterval);
-        bgmInterval = null;
-      }
-      bgmOscillators.forEach(osc => {
-        try { osc.stop(); } catch(e) {}
-      });
-      bgmOscillators = [];
-    }
-
     return {
-      init,
       getCtx, setVolume, setMuted, isMuted,
       playTap, playPlace, playPeng, playGang, playHu, playDraw, playChi,
-      playShuffle, playWin,
-      startBGM, stopBGM
     };
   })();
 
@@ -813,9 +808,6 @@ const Game = (() => {
     preloadImages();
     Particles.init();
     Particles.start();
-    
-    // Start BGM
-    Sound.startBGM();
 
     state = createInitialState(mode);
 
@@ -852,6 +844,12 @@ const Game = (() => {
     // Update UI
     updateTopBar();
     clearTable();
+
+    // Initialize skill system
+    if (typeof Skills !== 'undefined') Skills.initForGame();
+
+    // Initialize commentary
+    if (typeof Commentary !== 'undefined') Commentary.onGameStart();
 
     // Start ambient dust
     if (dustInterval) clearInterval(dustInterval);
@@ -1023,6 +1021,31 @@ const Game = (() => {
         selected: state.selectedTile?.id === tile.id,
       });
 
+      // Danger indicator (when skill active or hints enabled)
+      if (isHuman && isBottom && typeof Skills !== 'undefined') {
+        const showDanger = Skills.isDangerVisionActive() ||
+          (typeof App !== 'undefined' && App.getSettings()?.showHints);
+        if (showDanger) {
+          const gameState = {
+            discardPile: state.discardPile,
+            players: state.players,
+          };
+          const danger = Skills.calculateTileDanger(tile, gameState);
+          const dangerColor = Skills.getDangerColor(danger);
+          const indicator = document.createElement('div');
+          indicator.className = 'tile-danger-indicator';
+          indicator.style.cssText = `
+            position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);
+            width:80%;height:3px;border-radius:2px;
+            background:${dangerColor};
+            opacity:${Skills.isDangerVisionActive() ? '0.9' : '0.5'};
+            transition:all 0.3s;
+          `;
+          tileEl.style.position = 'relative';
+          tileEl.appendChild(indicator);
+        }
+      }
+
       if (isHuman) {
         setupTileInteraction(tileEl, tile, playerIndex);
       }
@@ -1110,6 +1133,28 @@ const Game = (() => {
     }
 
     return tile;
+  }
+
+  // ─── Draw best tile (Dragon skill) ───
+  function drawBestTile(playerIndex) {
+    if (state.drawIndex >= state.wall.length) {
+      handleDrawGame();
+      return null;
+    }
+    // Evaluate each remaining tile in wall to find best for player
+    const player = state.players[playerIndex];
+    let bestIdx = state.drawIndex;
+    let bestValue = -Infinity;
+    const limit = Math.min(state.drawIndex + 20, state.wall.length); // Search next 20 tiles
+    for (let i = state.drawIndex; i < limit; i++) {
+      const tile = state.wall[i];
+      const val = AI.evaluateHand([...player.hand, tile], player.melds);
+      const score = (4 - val.shanten) * 100 + val.completeSets * 30 + val.pairs * 10;
+      if (score > bestValue) { bestValue = score; bestIdx = i; }
+    }
+    // Swap best tile to draw position
+    [state.wall[state.drawIndex], state.wall[bestIdx]] = [state.wall[bestIdx], state.wall[state.drawIndex]];
+    return drawTile(playerIndex);
   }
 
   // ─── Discard a tile ───
@@ -1234,8 +1279,21 @@ const Game = (() => {
     // Update turn indicator
     updateTurnIndicator(playerIndex);
 
-    // Draw tile
-    const drawn = drawTile(playerIndex);
+    // Commentary: turn tracking
+    if (typeof Commentary !== 'undefined') Commentary.onTurn(state);
+
+    // Skills: turn end processing
+    if (typeof Skills !== 'undefined') Skills.onTurnEnd();
+
+    // Draw tile (with skill modifications)
+    let drawn;
+    if (playerIndex === 0 && typeof Skills !== 'undefined' && Skills.isBestDrawActive()) {
+      // Dragon skill: find best tile for player
+      Skills.consumeBestDraw();
+      drawn = drawBestTile(playerIndex);
+    } else {
+      drawn = drawTile(playerIndex);
+    }
     if (!drawn) return; // draw game
 
     const player = state.players[playerIndex];
@@ -1247,6 +1305,9 @@ const Game = (() => {
     if (player.isHuman) {
       // Render hand with new tile
       renderHand(playerIndex, false);
+
+      // Show skill buttons
+      if (typeof Skills !== 'undefined') Skills.renderSkillButton();
 
       // Check for auto-win / an gang / jia gang
       if (huResult) {
@@ -1532,6 +1593,7 @@ const Game = (() => {
     showActionText('吃！', '#5b9bd5');
     Sound.playChi();
     if (playerIndex === 0 && typeof Stats !== 'undefined') Stats.recordAction('chi');
+    if (typeof Commentary !== 'undefined') Commentary.onAction('chi', playerIndex, state);
 
     const player = state.players[playerIndex];
 
@@ -1587,6 +1649,7 @@ const Game = (() => {
     Sound.playPeng();
     Anim.screenShake(4, 300);
     if (playerIndex === 0 && typeof Stats !== 'undefined') Stats.recordAction('peng');
+    if (typeof Commentary !== 'undefined') Commentary.onAction('peng', playerIndex, state);
 
     const player = state.players[playerIndex];
 
@@ -1640,6 +1703,7 @@ const Game = (() => {
     Sound.playGang();
     Anim.screenShake(6, 400);
     if (playerIndex === 0 && typeof Stats !== 'undefined') Stats.recordAction('gang');
+    if (typeof Commentary !== 'undefined') Commentary.onAction('gang', playerIndex, state);
 
     const player = state.players[playerIndex];
 
@@ -1815,6 +1879,14 @@ const Game = (() => {
     Sound.playHu();
     Anim.screenShake(8, 500);
 
+    // Commentary
+    if (typeof Commentary !== 'undefined') {
+      Commentary.onAction(isTsumo ? 'tsumo' : 'hu', playerIndex, state);
+    }
+
+    // Remove skill buttons
+    if (typeof Skills !== 'undefined') Skills.removeSkillButton();
+
     await wait(300);
 
     // Particles
@@ -1869,6 +1941,12 @@ const Game = (() => {
         scoreEl.style.transform = 'scale(1)';
         scoreEl.style.color = '';
       }, 1500);
+    }
+
+    // Commentary on score
+    if (typeof Commentary !== 'undefined') {
+      const totalFan = scoreResult.fans.reduce((s, f) => s + (f.fan || 0), 0);
+      Commentary.onScore(scoreResult.fans, totalFan);
     }
 
     // Record stats
@@ -1985,6 +2063,54 @@ const Game = (() => {
       if (isTsumo) {
         fansEl.innerHTML += '<div style="margin:4px 0;color:#ff6b9d"><b>自摸</b></div>';
       }
+
+      // Post-game analysis
+      const totalFan = scoreResult.fans.reduce((s, f) => s + (f.fan || 0), 0);
+      const remaining = state.wall.length - state.drawIndex;
+      const turnsUsed = state.drawIndex - 52; // 52 tiles dealt initially
+      const efficiency = playerIndex === 0 ? 'good' : 'neutral';
+
+      let analysisHtml = '<div class="analysis-section">';
+      analysisHtml += '<div class="analysis-title">📊 对局分析</div>';
+
+      // Turns used
+      analysisHtml += `<div class="analysis-item">
+        <span class="analysis-icon">⏱</span>
+        <span class="analysis-label">胡牌回合</span>
+        <span class="analysis-value">${Math.ceil(turnsUsed / 4)}回合</span>
+      </div>`;
+
+      // Total fan
+      analysisHtml += `<div class="analysis-item">
+        <span class="analysis-icon">⭐</span>
+        <span class="analysis-label">总番数</span>
+        <span class="analysis-value ${totalFan >= 6 ? 'analysis-good' : totalFan >= 3 ? 'analysis-neutral' : ''}">${totalFan}番</span>
+      </div>`;
+
+      // Win type
+      analysisHtml += `<div class="analysis-item">
+        <span class="analysis-icon">${isTsumo ? '🤚' : '🎯'}</span>
+        <span class="analysis-label">胡牌方式</span>
+        <span class="analysis-value">${isTsumo ? '自摸' : '点炮'}</span>
+      </div>`;
+
+      // Remaining tiles
+      analysisHtml += `<div class="analysis-item">
+        <span class="analysis-icon">🀄</span>
+        <span class="analysis-label">剩余牌数</span>
+        <span class="analysis-value ${remaining > 40 ? 'analysis-good' : remaining < 15 ? 'analysis-bad' : ''}">${remaining}张</span>
+      </div>`;
+
+      // Efficiency rating
+      const stars = totalFan >= 6 ? 3 : totalFan >= 3 ? 2 : 1;
+      analysisHtml += `<div class="analysis-item">
+        <span class="analysis-icon">🏆</span>
+        <span class="analysis-label">评价</span>
+        <span class="analysis-value" style="color:#f5c518">${'⭐'.repeat(stars)}</span>
+      </div>`;
+
+      analysisHtml += '</div>';
+      fansEl.innerHTML += analysisHtml;
     }
 
     // Check blood war
@@ -2003,6 +2129,8 @@ const Game = (() => {
     hideActionBar();
 
     showActionText('流局', '#95a5a6');
+    if (typeof Commentary !== 'undefined') Commentary.onDrawGame();
+    if (typeof Skills !== 'undefined') Skills.removeSkillButton();
 
     // Reveal all hands face up (temporarily mark all as human for rendering)
     for (let p = 0; p < 4; p++) {
@@ -2233,6 +2361,8 @@ const Game = (() => {
   function destroy() {
     Particles.stop();
     if (dustInterval) clearInterval(dustInterval);
+    if (typeof Commentary !== 'undefined') Commentary.destroy();
+    if (typeof Skills !== 'undefined') Skills.removeSkillButton();
     state = null;
   }
 
