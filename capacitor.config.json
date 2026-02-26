@@ -1,0 +1,14 @@
+{
+  "appId": "com.mariohe.helloKittyMahjong",
+  "appName": "Hello Kitty 麻将",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "always",
+    "allowsLinkPreview": false,
+    "scrollEnabled": false,
+    "backgroundColor": "#FFB7C5"
+  },
+  "server": {
+    "iosScheme": "capacitor"
+  }
+}

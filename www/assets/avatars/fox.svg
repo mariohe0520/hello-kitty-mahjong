@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="bgo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffe0c0"/>
+      <stop offset="100%" stop-color="#f5b060"/>
+    </radialGradient>
+    <radialGradient id="ffur" cx="45%" cy="38%" r="55%">
+      <stop offset="0%" stop-color="#f5a030"/>
+      <stop offset="100%" stop-color="#e08020"/>
+    </radialGradient>
+    <radialGradient id="fface" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff8f0"/>
+      <stop offset="100%" stop-color="#f8e8d0"/>
+    </radialGradient>
+  </defs>
+  <!-- Background -->
+  <circle cx="128" cy="128" r="120" fill="url(#bgo)"/>
+  <circle cx="128" cy="128" r="120" fill="none" stroke="#e08020" stroke-width="3" opacity="0.3"/>
+  <!-- Pointy ears -->
+  <polygon points="70,50 95,110 50,110" fill="url(#ffur)"/>
+  <polygon points="186,50 161,110 206,110" fill="url(#ffur)"/>
+  <!-- Ear inner -->
+  <polygon points="72,62 90,105 58,105" fill="#ffd090" opacity="0.6"/>
+  <polygon points="184,62 166,105 198,105" fill="#ffd090" opacity="0.6"/>
+  <!-- Head -->
+  <ellipse cx="128" cy="148" rx="75" ry="68" fill="url(#ffur)"/>
+  <!-- White face patch -->
+  <ellipse cx="128" cy="162" rx="45" ry="42" fill="url(#fface)"/>
+  <!-- Eyes (sly/cute) -->
+  <ellipse cx="105" cy="138" rx="8" ry="7" fill="#333" transform="rotate(-5 105 138)"/>
+  <ellipse cx="151" cy="138" rx="8" ry="7" fill="#333" transform="rotate(5 151 138)"/>
+  <ellipse cx="107" cy="136" rx="3" ry="2.5" fill="#fff"/>
+  <ellipse cx="153" cy="136" rx="3" ry="2.5" fill="#fff"/>
+  <!-- Eyebrow (sly look) -->
+  <path d="M95,128 Q105,124 115,128" fill="none" stroke="#c06010" stroke-width="2" stroke-linecap="round"/>
+  <path d="M141,128 Q151,124 161,128" fill="none" stroke="#c06010" stroke-width="2" stroke-linecap="round"/>
+  <!-- Nose -->
+  <ellipse cx="128" cy="155" rx="5" ry="4" fill="#333"/>
+  <ellipse cx="129" cy="154" rx="1.5" ry="1.2" fill="#666" opacity="0.5"/>
+  <!-- Mouth (sly smile) -->
+  <path d="M115,163 Q128,172 141,163" fill="none" stroke="#c08060" stroke-width="2" stroke-linecap="round"/>
+  <!-- Blush -->
+  <ellipse cx="90" cy="152" rx="11" ry="7" fill="#ff9dbd" opacity="0.4"/>
+  <ellipse cx="166" cy="152" rx="11" ry="7" fill="#ff9dbd" opacity="0.4"/>
+</svg>
