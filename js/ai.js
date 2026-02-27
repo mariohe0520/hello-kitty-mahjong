@@ -263,16 +263,12 @@ const AI = (() => {
 
     const currentEval = evaluateHand(hand, melds);
     for (const option of chiOptions) {
-      const newHand = hand.filter(t => {
-        const needed = option.filter(r => r !== discardTile.rank);
-        for (const r of needed) {
-          if (t.suit === discardTile.suit && t.rank === r) {
-            const idx = needed.indexOf(r);
-            if (idx >= 0) { needed.splice(idx, 1); return false; }
-          }
-        }
-        return true;
-      });
+      const needed = option.filter(r => r !== discardTile.rank);
+      const newHand = [...hand];
+      for (const r of needed) {
+        const idx = newHand.findIndex(t => t.suit === discardTile.suit && t.rank === r);
+        if (idx >= 0) newHand.splice(idx, 1);
+      }
       const newEval = evaluateHand(newHand, [...melds, { type: 'chi', tiles: [] }]);
       if (newEval.shanten < currentEval.shanten) return option;
     }
@@ -289,7 +285,11 @@ const AI = (() => {
     }
 
     const currentEval = evaluateHand(hand, melds);
-    const newHand = hand.filter(t => t.key !== discardTile.key).slice(0, hand.length - 2);
+    let removed = 0;
+    const newHand = hand.filter(t => {
+      if (t.key === discardTile.key && removed < 2) { removed++; return false; }
+      return true;
+    });
     const newEval = evaluateHand(newHand, [...melds, { type: 'peng', tiles: [] }]);
     if (newEval.shanten <= currentEval.shanten) return true;
     if (Math.random() < p.aggression * 0.5) return true;

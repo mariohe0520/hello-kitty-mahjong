@@ -241,7 +241,6 @@ const Commentary = (() => {
       }
     }, 500);
   }
-  startQueueInterval();
 
   // ╔═══════════════════════════════════════════════════════════╗
   // ║  EVENT HANDLERS                                          ║

@@ -170,38 +170,6 @@
   100% { transform: translate(-50%, -50%) scale(1) rotate(0); opacity: 0; }
 }
 
-/* Tile discard animation */
-.tile.discarding {
-  animation: tileDiscard 0.3s ease-out;
-}
-@keyframes tileDiscard {
-  0% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-20px) scale(1.15); }
-  100% { transform: translateY(0) scale(0.9); opacity: 0.5; }
-}
-
-/* Winning tile glow */
-.tile.winning {
-  box-shadow: 0 0 12px rgba(245,197,24,0.5);
-}
-
-/* Remaining ring */
-.remaining-ring {
-  position: relative;
-  display: flex; align-items: center; justify-content: center;
-}
-.remaining-ring svg {
-  transform: rotate(-90deg);
-}
-.ring-text {
-  position: absolute;
-  font-size: 16px; font-weight: 900; color: #f5c518;
-}
-.ring-label {
-  position: absolute; bottom: -4px;
-  font-size: 9px; color: rgba(255,255,255,0.5);
-}
-
 /* Shake animation */
 @keyframes shake {
   0%,100% { transform: translate(0,0); }

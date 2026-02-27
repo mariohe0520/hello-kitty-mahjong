@@ -145,14 +145,6 @@
   }
 }
 
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-4px); }
-  40% { transform: translateX(4px); }
-  60% { transform: translateX(-3px); }
-  80% { transform: translateX(2px); }
-}
-
 /* ═══ Game UI Styles ═══ */
 
 .player-area.active-turn { position: relative; }
@@ -166,34 +158,6 @@
   0%, 100% { border-color: rgba(255,107,157,0.6); box-shadow: 0 0 8px rgba(255,107,157,0.3); }
   50% { border-color: rgba(255,107,157,0.2); box-shadow: 0 0 20px rgba(255,107,157,0.1); }
 }
-
-/* Action calligraphy */
-.action-calligraphy {
-  position: fixed; top: 45%; left: 50%;
-  transform: translate(-50%, -50%) scale(0);
-  font-size: 96px; font-weight: 900; pointer-events: none; z-index: 300;
-  text-shadow: 0 0 40px currentColor, 0 4px 8px rgba(0,0,0,0.3);
-  animation: calligraphyBurst 0.8s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
-  letter-spacing: 4px;
-}
-@keyframes calligraphyBurst {
-  0% { transform: translate(-50%, -50%) scale(0) rotate(-15deg); opacity: 0; filter: blur(8px); }
-  25% { transform: translate(-50%, -50%) scale(1.5) rotate(3deg); opacity: 1; filter: blur(0); }
-  50% { transform: translate(-50%, -50%) scale(1.15) rotate(-1deg); }
-  100% { transform: translate(-50%, -50%) scale(0.9); opacity: 0; filter: blur(4px); }
-}
-
-.action-calligraphy.action-hu {
-  font-size: 120px;
-  background: linear-gradient(180deg, #fff8dc, #f5c518, #d4a017, #f5c518, #fff8dc);
-  background-size: 100% 200%;
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  animation: calligraphyBurst 1s cubic-bezier(0.175,0.885,0.32,1.275) forwards,
-             goldenShimmer 0.6s ease-in-out 3;
-  text-shadow: none;
-  filter: drop-shadow(0 0 30px rgba(245,197,24,0.7));
-}
-@keyframes goldenShimmer { 0% { background-position: 0% 0%; } 100% { background-position: 0% 200%; } }
 
 /* Remaining tiles ring */
 .remaining-ring { width: 56px; height: 56px; position: relative; filter: drop-shadow(0 0 8px rgba(245,197,24,0.2)); }

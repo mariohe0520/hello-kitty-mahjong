@@ -1001,7 +1001,8 @@ const Game = (() => {
     return {
       mode,
       deck,
-      wall: [...deck], // tiles to draw from
+      wall: [...deck],
+      wallInitialLength: deck.length,
       drawIndex: 0,
       players: [
         { hand: [], melds: [], discards: [], score: scores[0], isHuman: true, name: '我', avatar: '🎀', personality: null, charId: null, removedSuit: null, hasWon: false, pengCount: 0, chiCount: 0, gangCount: 0 },
@@ -1350,23 +1351,26 @@ const Game = (() => {
   // ─── Tile interaction (tap to select, tap again to discard) ───
   function setupTileInteraction(el, tile, playerIndex) {
     let tapHandled = false;
+    let usedTouch = false;
 
     function handleTap(e) {
-      e.preventDefault();
+      if (e.type === 'touchend') {
+        usedTouch = true;
+        e.preventDefault();
+      }
+      if (e.type === 'click' && usedTouch) return;
       e.stopPropagation();
       if (tapHandled) return;
       tapHandled = true;
-      setTimeout(() => tapHandled = false, 200);
+      setTimeout(() => tapHandled = false, 300);
 
       if (state.turnPhase !== 'discard' || state.currentPlayer !== playerIndex) return;
       if (state.gameOver) return;
 
-      // Sichuan: if player still has removed suit tiles, must discard those
       if (state.mode === 'sichuan' && state.players[0].removedSuit) {
         const removedSuit = state.players[0].removedSuit;
         const hasRemoved = state.players[0].hand.some(t => t.suit === removedSuit);
         if (hasRemoved && tile.suit !== removedSuit) {
-          // Flash the removed suit tiles
           shakeElement(el);
           return;
         }
@@ -1375,10 +1379,8 @@ const Game = (() => {
       Sound.playTap();
 
       if (state.selectedTile?.id === tile.id) {
-        // Second tap — confirm discard
         discardTile(playerIndex, tile);
       } else {
-        // First tap — select
         state.selectedTile = tile;
         renderHand(playerIndex);
       }
@@ -1608,8 +1610,9 @@ const Game = (() => {
 
   // ─── Update remaining tiles display ───
   function updateRemainingTiles() {
+    if (!state || !state.wall) return;
     const remaining = state.wall.length - state.drawIndex;
-    const total = state.wall.length;
+    const total = state.wallInitialLength || state.wall.length;
     const el = document.getElementById('tiles-remaining');
     if (el) el.textContent = remaining;
 
@@ -1683,21 +1686,16 @@ const Game = (() => {
 
     const player = state.players[playerIndex];
 
-    // Check for tsumo (self-draw win)
-    // Hand already includes drawn tile (14 tiles), so check the full hand directly
-    const huResult = rules.checkWin(player.hand, player.melds);
+    const rawHuResult = rules.checkWin(player.hand, player.melds);
+    const huResult = rawHuResult && canPlayerHu(playerIndex, player.hand, player.melds) ? rawHuResult : null;
 
     if (player.isHuman) {
-      // Render hand with new tile
       renderHand(playerIndex, false);
 
-      // Show skill buttons
       if (typeof Skills !== 'undefined') Skills.renderSkillButton();
 
-      // Update tenpai indicator (will show when hand goes back to 13 after discard)
       updateTenpaiIndicator(0);
 
-      // Check for auto-win / an gang / jia gang
       if (huResult) {
         showActionBar(['hu']);
       }
@@ -1790,9 +1788,8 @@ const Game = (() => {
       const player = state.players[pIdx];
       if (player.hasWon) continue;
 
-      // Check hu
       const huResult = rules.checkCanHu(player.hand, tile, player.melds);
-      if (huResult) {
+      if (huResult && canPlayerHu(pIdx, [...player.hand, tile], player.melds)) {
         reactions.push({ playerIndex: pIdx, action: 'hu', priority: 4 });
       }
 
@@ -1839,8 +1836,15 @@ const Game = (() => {
       return;
     }
 
-    // All AI reactions
+    // Collect all AI decisions first, then process by priority
+    const actionPriority = { hu: 4, gang: 3, peng: 2, chi: 1, pass: 0 };
+    const aiDecisions = [];
+    const checkedPlayers = new Set();
+
     for (const reaction of aiReactions) {
+      if (checkedPlayers.has(reaction.playerIndex)) continue;
+      checkedPlayers.add(reaction.playerIndex);
+
       const player = state.players[reaction.playerIndex];
       const gameState = {
         discardPile: state.discardPile,
@@ -1857,17 +1861,27 @@ const Game = (() => {
         removedSuit: player.removedSuit,
       }, tile, discardPlayerIndex, gameState);
 
+      if (decision.action !== 'pass') {
+        aiDecisions.push({ playerIndex: reaction.playerIndex, decision });
+      }
+    }
+
+    aiDecisions.sort((a, b) =>
+      (actionPriority[b.decision.action] || 0) - (actionPriority[a.decision.action] || 0)
+    );
+
+    for (const { playerIndex: pIdx, decision } of aiDecisions) {
       if (decision.action === 'hu') {
-        await handleHu(reaction.playerIndex, tile, false);
+        await handleHu(pIdx, tile, false);
         return;
       } else if (decision.action === 'gang') {
-        await handleMingGang(reaction.playerIndex, tile, discardPlayerIndex);
+        await handleMingGang(pIdx, tile, discardPlayerIndex);
         return;
       } else if (decision.action === 'peng') {
-        await handlePeng(reaction.playerIndex, tile, discardPlayerIndex);
+        await handlePeng(pIdx, tile, discardPlayerIndex);
         return;
       } else if (decision.action === 'chi') {
-        await handleChi(reaction.playerIndex, tile, decision.option, discardPlayerIndex);
+        await handleChi(pIdx, tile, decision.option, discardPlayerIndex);
         return;
       }
     }
@@ -2203,8 +2217,8 @@ const Game = (() => {
     const replacement = drawTileFromEnd(playerIndex);
     if (!replacement) return;
 
-    // Check tsumo on replacement (hand already includes the replacement tile)
-    const huResult = rules.checkWin(player.hand, player.melds);
+    const rawMingGangHu = rules.checkWin(player.hand, player.melds);
+    const huResult = rawMingGangHu && canPlayerHu(playerIndex, player.hand, player.melds) ? rawMingGangHu : null;
 
     if (player.isHuman) {
       renderHand(playerIndex);
@@ -2267,26 +2281,39 @@ const Game = (() => {
     const replacement = drawTileFromEnd(playerIndex);
     if (!replacement) return;
 
+    const rawAnGangHu = rules.checkWin(player.hand, player.melds);
+    const huResult = rawAnGangHu && canPlayerHu(playerIndex, player.hand, player.melds) ? rawAnGangHu : null;
+
     if (player.isHuman) {
       renderHand(playerIndex);
-      state.currentPlayer = playerIndex;
-      state.turnPhase = 'discard';
+      if (huResult) {
+        showActionBar(['hu', 'pass']);
+        state.turnPhase = 'action';
+        state.currentPlayer = playerIndex;
+      } else {
+        state.currentPlayer = playerIndex;
+        state.turnPhase = 'discard';
+      }
     } else {
-      state.currentPlayer = playerIndex;
-      const gameState = {
-        discardPile: state.discardPile,
-        allMelds: state.players.flatMap(p => p.melds),
-        playerDiscards: state.players.map(p => p.discards),
-        rules,
-      };
-      const decision = await AI.takeTurn({
-        hand: player.hand,
-        melds: player.melds,
-        personality: player.personality,
-        playerIndex,
-        removedSuit: player.removedSuit,
-      }, gameState);
-      await discardTile(playerIndex, decision.tile);
+      if (huResult) {
+        await handleHu(playerIndex, replacement, true);
+      } else {
+        state.currentPlayer = playerIndex;
+        const gameState = {
+          discardPile: state.discardPile,
+          allMelds: state.players.flatMap(p => p.melds),
+          playerDiscards: state.players.map(p => p.discards),
+          rules,
+        };
+        const decision = await AI.takeTurn({
+          hand: player.hand,
+          melds: player.melds,
+          personality: player.personality,
+          playerIndex,
+          removedSuit: player.removedSuit,
+        }, gameState);
+        await discardTile(playerIndex, decision.tile);
+      }
     }
   }
 
@@ -2315,7 +2342,7 @@ const Game = (() => {
         if (other.hasWon) continue;
 
         const huResult = rules.checkCanHu(other.hand, gangTile, other.melds);
-        if (huResult) {
+        if (huResult && canPlayerHu(pIdx, [...other.hand, gangTile], other.melds)) {
           if (other.isHuman) {
             // Show hu option to human player
             showActionBar(['hu', 'pass']);
@@ -2376,11 +2403,24 @@ const Game = (() => {
     const replacement = drawTileFromEnd(playerIndex);
     if (!replacement) return;
 
+    const rawJiaGangHu = rules.checkWin(player.hand, player.melds);
+    const jiaGangHuResult = rawJiaGangHu && canPlayerHu(playerIndex, player.hand, player.melds) ? rawJiaGangHu : null;
+
     if (player.isHuman) {
       renderHand(playerIndex);
-      state.currentPlayer = playerIndex;
-      state.turnPhase = 'discard';
+      if (jiaGangHuResult) {
+        showActionBar(['hu', 'pass']);
+        state.turnPhase = 'action';
+        state.currentPlayer = playerIndex;
+      } else {
+        state.currentPlayer = playerIndex;
+        state.turnPhase = 'discard';
+      }
     } else {
+      if (jiaGangHuResult) {
+        await handleHu(playerIndex, replacement, true);
+        return;
+      }
       state.currentPlayer = playerIndex;
       const gameState = {
         discardPile: state.discardPile,
@@ -2437,9 +2477,7 @@ const Game = (() => {
       winTile,
       {
         isZimo: isTsumo,
-        // Pass seat wind for scoring bonus (FEATURE 3: wind rotation affects scoring)
         seatWind: getSeatWind(playerIndex),
-        seatWind: ['fe', 'fs', 'fw', 'fn'][playerIndex],
         roundWind: state.roundWind,
         removedSuit: player.removedSuit,
       }
@@ -2448,7 +2486,6 @@ const Game = (() => {
     // Update scores
     const points = scoreResult.baseScore;
     if (isTsumo) {
-      // Everyone pays
       for (let i = 0; i < 4; i++) {
         if (i !== playerIndex) {
           state.players[i].score -= points;
@@ -2456,8 +2493,7 @@ const Game = (() => {
       }
       player.score += points * 3;
     } else {
-      // Ron: the discarder pays double to balance with tsumo (3 players * 1x each)
-      const ronPayment = points * 2;
+      const ronPayment = points * 3;
       state.players[state.lastDiscardPlayer].score -= ronPayment;
       player.score += ronPayment;
     }
@@ -2662,20 +2698,24 @@ const Game = (() => {
 
     // Update "next" button text for multi-round
     const nextBtn = document.getElementById('btn-next-hand');
-    if (nextBtn && multiRound) {
-      if (multiRound.handNumber >= multiRound.maxHands) {
-        nextBtn.textContent = '查看排名';
-      } else {
-        nextBtn.textContent = `下一手 (${multiRound.handNumber}/${multiRound.maxHands})`;
+    if (nextBtn) {
+      if (state._bloodWarContinue) {
+        nextBtn.textContent = '继续血战';
+      } else if (multiRound) {
+        if (multiRound.handNumber >= multiRound.maxHands) {
+          nextBtn.textContent = '查看排名';
+        } else {
+          nextBtn.textContent = `下一手 (${multiRound.handNumber}/${multiRound.maxHands})`;
+        }
       }
     }
 
-    // Check blood war
     if (state.mode === 'sichuan' && !SichuanRules.isBloodWarComplete(state.winners)) {
-      // Game continues
       state.gameOver = false;
+      state._bloodWarContinue = true;
     } else {
       state.gameOver = true;
+      state._bloodWarContinue = false;
     }
   }
 
@@ -2788,7 +2828,6 @@ const Game = (() => {
 
   // ─── Remove last discard from pool/river ───
   function removeLastDiscard() {
-    // Remove from the per-player river
     if (state.discardHistory.length > 0) {
       const lastEntry = state.discardHistory[state.discardHistory.length - 1];
       const riverId = `discard-river-${lastEntry.playerIndex}`;
@@ -2796,9 +2835,12 @@ const Game = (() => {
       if (river && river.lastChild) {
         river.lastChild.remove();
       }
+      const player = state.players[lastEntry.playerIndex];
+      if (player && player.discards.length > 0) {
+        player.discards.pop();
+      }
       state.discardHistory.pop();
     }
-    // Also remove from legacy pool
     const pool = document.getElementById('discard-pool');
     if (pool && pool.lastChild) {
       pool.lastChild.remove();
@@ -2973,6 +3015,8 @@ const Game = (() => {
   async function checkRemainingAIReactions() {
     const tile = state.lastDiscard;
     const fromPlayer = state.lastDiscardPlayer;
+    const actionPriority = { hu: 4, gang: 3, peng: 2, chi: 1, pass: 0 };
+    const aiDecisions = [];
 
     for (let i = 1; i <= 3; i++) {
       const pIdx = (fromPlayer + i) % 4;
@@ -2994,6 +3038,16 @@ const Game = (() => {
         removedSuit: player.removedSuit,
       }, tile, fromPlayer, gameState);
 
+      if (decision.action !== 'pass') {
+        aiDecisions.push({ playerIndex: pIdx, decision });
+      }
+    }
+
+    aiDecisions.sort((a, b) =>
+      (actionPriority[b.decision.action] || 0) - (actionPriority[a.decision.action] || 0)
+    );
+
+    for (const { playerIndex: pIdx, decision } of aiDecisions) {
       if (decision.action === 'hu') {
         await handleHu(pIdx, tile, false);
         return;
@@ -3009,7 +3063,6 @@ const Game = (() => {
       }
     }
 
-    // All passed
     nextTurn(fromPlayer);
   }
 
@@ -3076,15 +3129,28 @@ const Game = (() => {
     }).join('');
   }
 
+  function continueBloodWar() {
+    const winModal = document.getElementById('win-screen');
+    if (winModal) winModal.style.display = 'none';
+    state._bloodWarContinue = false;
+    state.gameOver = false;
+    state.turnPhase = 'idle';
+    nextTurn(state.currentPlayer);
+  }
+
   function startNextHand() {
-    // Hide modals
+    if (state && state._bloodWarContinue) {
+      continueBloodWar();
+      return;
+    }
+
     const winModal = document.getElementById('win-screen');
     if (winModal) winModal.style.display = 'none';
     const scoreModal = document.getElementById('round-scoreboard');
     if (scoreModal) scoreModal.style.display = 'none';
 
     const canContinue = advanceMultiRound();
-    if (canContinue === false) return; // game over
+    if (canContinue === false) return;
 
     startGame(state.mode, { campaignLevel: state.campaignLevel, aiDifficulty: state.aiDifficulty });
   }
@@ -3341,6 +3407,16 @@ const Game = (() => {
   // ╔═══════════════════════════════════════════════════════════╗
   // ║  UTILITIES                                               ║
   // ╚═══════════════════════════════════════════════════════════╝
+
+  function canPlayerHu(playerIndex, hand, melds) {
+    if (state.mode === 'sichuan') {
+      const removedSuit = state.players[playerIndex].removedSuit;
+      if (removedSuit && typeof SichuanRules !== 'undefined') {
+        if (!SichuanRules.isQueYiMenSatisfied(hand, removedSuit)) return false;
+      }
+    }
+    return true;
+  }
 
   function wait(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
