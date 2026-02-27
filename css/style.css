@@ -363,7 +363,7 @@ body {
   width: 100%; gap: 4px; flex: 1; min-height: 200px; overflow: visible;
 }
 .player-left, .player-right {
-  width: 44px; flex-shrink: 0;
+  width: 48px; flex-shrink: 0;
   justify-content: center; align-items: center;
   padding: 4px 0; overflow: visible;
 }
@@ -405,17 +405,21 @@ body {
   max-width: 100%; justify-content: center;
 }
 .hand-bottom .tile {
-  width: 28px; min-width: 28px; max-width: 38px;
+  width: 36px; min-width: 32px; max-width: 46px;
   height: auto; aspect-ratio: 3/4;
-  margin-right: -3px; position: relative;
+  margin-right: -2px; position: relative;
 }
 .hand-bottom .tile:last-child { margin-right: 0; }
+.hand-bottom .tile .tile-rank { font-size: 20px; font-weight: 900; }
+.hand-bottom .tile .tile-suit { font-size: 10px; }
+.hand-bottom .tile .tile-honor { font-size: 22px; font-weight: 900; }
 .hand-bottom .tile.selected {
-  transform: translateY(-8px);
+  transform: translateY(-10px) scale(1.1);
   z-index: 10;
-  box-shadow: 0 4px 12px rgba(245,197,24,0.5);
+  box-shadow: 0 6px 16px rgba(245,197,24,0.6);
+  border-color: #f5c518;
 }
-.hand-top .tile { width: 22px; height: 28px; }
+.hand-top .tile { width: 24px; height: 30px; }
 .hand-side { flex-direction: column; gap: 1px; max-height: 100%; overflow: visible; }
 .hand-side .tile {
   width: 36px; height: 14px; min-width: 36px; min-height: 14px;
@@ -440,13 +444,57 @@ body {
 /* ═══ ACTION BAR ═══ */
 .action-bar {
   display: flex; gap: 10px; justify-content: center; align-items: center;
-  padding: 14px 16px calc(16px + var(--safe-bottom));
-  background: rgba(15,8,25,0.96);
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+  flex-wrap: wrap;
+  padding: 10px 16px calc(14px + var(--safe-bottom));
+  background: rgba(15,8,25,0.97);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
   position: fixed; bottom: 0; left: 0; right: 0;
   z-index: 9999;
   border-top: 2px solid rgba(245,197,24,0.6);
 }
+
+/* Tile preview in action bar — shows the discarded tile LARGE */
+.action-tile-preview {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; width: 100%; padding: 6px 0 4px;
+  animation: previewSlideIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes previewSlideIn {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.action-tile-preview .preview-label {
+  font-size: 13px; color: rgba(255,255,255,0.7);
+  font-weight: 600; white-space: nowrap;
+}
+.action-tile-preview .preview-tile-container {
+  display: flex; align-items: center; gap: 6px;
+}
+.action-tile-preview .tile {
+  width: 52px !important; height: 68px !important;
+  min-width: 52px !important; min-height: 68px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 16px rgba(245,197,24,0.3) !important;
+  border: 2px solid rgba(245,197,24,0.5) !important;
+  cursor: default;
+}
+.action-tile-preview .tile .tile-rank {
+  font-size: 26px !important; font-weight: 900 !important;
+}
+.action-tile-preview .tile .tile-suit {
+  font-size: 12px !important; font-weight: 700 !important;
+}
+.action-tile-preview .tile .tile-honor {
+  font-size: 28px !important; font-weight: 900 !important;
+}
+.action-tile-preview .preview-from {
+  font-size: 11px; color: rgba(255,255,255,0.5);
+  display: flex; align-items: center; gap: 4px;
+}
+.action-tile-preview .preview-from .preview-avatar {
+  font-size: 18px;
+}
+
 .action-btn {
   padding: 14px 24px; border: none; border-radius: 14px;
   font-size: 18px; font-weight: 800; cursor: pointer;
@@ -706,23 +754,47 @@ body {
 
 /* ═══ RESPONSIVE ═══ */
 @media (max-width: 375px) {
-  .hand-top .tile { width: 18px; height: 24px; }
-  .discard-pool .tile { width: 16px; height: 20px; font-size: 8px; }
-  .player-left, .player-right { width: 36px; }
+  .hand-top .tile { width: 20px; height: 26px; }
+  .hand-bottom .tile { min-width: 28px; max-width: 36px; }
+  .hand-bottom .tile .tile-rank { font-size: 16px !important; }
+  .hand-bottom .tile .tile-honor { font-size: 18px !important; }
+  .discard-river .tile { width: 24px !important; height: 30px !important; min-width: 24px !important; }
+  .discard-river .tile .tile-rank { font-size: 12px !important; }
+  .discard-river .tile .tile-honor { font-size: 12px !important; }
+  .player-left, .player-right { width: 40px; }
   .action-btn { padding: 8px 14px; font-size: 14px; }
   .home-stats-row { grid-template-columns: repeat(2, 1fr); }
+  .action-tile-preview .tile { width: 44px !important; height: 58px !important; min-width: 44px !important; }
+  .action-tile-preview .tile .tile-rank { font-size: 22px !important; }
+  .action-tile-preview .tile .tile-honor { font-size: 24px !important; }
 }
 @media (min-width: 414px) {
-  .hand-top .tile { width: 24px; height: 30px; }
-  .hand-bottom .tile { max-width: 38px; }
+  .hand-top .tile { width: 26px; height: 32px; }
+  .hand-bottom .tile { max-width: 44px; }
+  .hand-bottom .tile .tile-rank { font-size: 22px !important; }
+  .hand-bottom .tile .tile-honor { font-size: 24px !important; }
   .player-left, .player-right { width: 48px; }
   .hand-side .tile { width: 40px; }
+  .discard-river .tile { width: 30px !important; height: 38px !important; }
+  .discard-river .tile .tile-rank { font-size: 16px !important; }
+  .discard-river .tile .tile-honor { font-size: 16px !important; }
 }
 @media (min-width: 768px) {
-  .mahjong-table { max-width: 560px; }
-  .hand-top .tile { width: 30px; height: 38px; }
-  .hand-bottom .tile { max-width: 44px; }
-  .player-left, .player-right { width: 56px; }
+  .mahjong-table { max-width: 600px; }
+  .hand-top .tile { width: 32px; height: 40px; }
+  .hand-bottom .tile { max-width: 52px; min-width: 40px; }
+  .hand-bottom .tile .tile-rank { font-size: 24px !important; }
+  .hand-bottom .tile .tile-suit { font-size: 12px !important; }
+  .hand-bottom .tile .tile-honor { font-size: 28px !important; }
+  .player-left, .player-right { width: 60px; }
+  .discard-river .tile { width: 34px !important; height: 44px !important; }
+  .discard-river .tile .tile-rank { font-size: 18px !important; }
+  .discard-river .tile .tile-honor { font-size: 18px !important; }
+  .discard-river { max-height: 110px; }
+  .action-tile-preview .tile { width: 64px !important; height: 84px !important; min-width: 64px !important; }
+  .action-tile-preview .tile .tile-rank { font-size: 32px !important; }
+  .action-tile-preview .tile .tile-suit { font-size: 14px !important; }
+  .action-tile-preview .tile .tile-honor { font-size: 34px !important; }
 }
 
 /* ═══ SKILLS PREVIEW (Home Page) ═══ */
@@ -804,50 +876,96 @@ body {
 
 /* ═══ PER-PLAYER DISCARD RIVERS (河) ═══ */
 .discard-river {
-  display: flex; flex-wrap: wrap; gap: 1px;
-  min-height: 20px; max-height: 60px;
-  overflow: hidden;
+  display: flex; flex-wrap: wrap; gap: 2px;
+  min-height: 28px; max-height: 90px;
+  overflow: visible;
+  padding: 2px;
+  position: relative;
 }
 .discard-river .tile {
-  width: 20px !important; height: 26px !important;
-  font-size: 9px !important;
+  width: 28px !important; height: 36px !important;
+  min-width: 28px !important; min-height: 36px !important;
+  font-size: 11px !important;
   cursor: default; flex-shrink: 0;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-  border-radius: 2px;
-  transition: box-shadow 0.3s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  border-radius: 4px;
+  transition: box-shadow 0.3s, transform 0.3s;
+  background: linear-gradient(175deg, #fffff8 0%, #faf5e8 30%, #f0ead0 100%) !important;
+}
+.discard-river .tile .tile-rank {
+  font-size: 14px !important;
+  font-weight: 900;
+}
+.discard-river .tile .tile-suit {
+  font-size: 8px !important;
+}
+.discard-river .tile .tile-honor {
+  font-size: 15px !important;
+  font-weight: 900;
 }
 .discard-river .tile.last-discard {
-  box-shadow: 0 0 8px rgba(245,197,24,0.6);
-  border: 1px solid rgba(245,197,24,0.5);
+  box-shadow: 0 0 12px rgba(245,197,24,0.8), 0 0 4px rgba(245,197,24,0.6);
+  border: 2px solid rgba(245,197,24,0.7) !important;
+  transform: scale(1.15);
+  z-index: 5;
+  animation: lastDiscardPulse 1.5s ease-in-out infinite;
+}
+@keyframes lastDiscardPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(245,197,24,0.6), 0 0 3px rgba(245,197,24,0.4); }
+  50% { box-shadow: 0 0 16px rgba(245,197,24,1), 0 0 6px rgba(245,197,24,0.8); }
 }
 
 .discard-river-bottom {
   justify-content: center;
   max-width: 100%;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 .discard-river-top {
   justify-content: center;
   max-width: 100%;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 .discard-river-side {
   flex-direction: column;
   flex-wrap: nowrap;
   max-height: 100%;
-  max-width: 26px;
+  max-width: 36px;
   overflow-y: auto;
+  overflow-x: visible;
+  scrollbar-width: none;
 }
+.discard-river-side::-webkit-scrollbar { display: none; }
 .discard-river-side .tile {
-  width: 24px !important; height: 12px !important;
-  font-size: 7px !important;
-  min-height: 12px;
+  width: 30px !important; height: 18px !important;
+  min-width: 30px !important; min-height: 18px !important;
+  font-size: 9px !important;
+}
+.discard-river-side .tile .tile-rank {
+  font-size: 10px !important;
+}
+.discard-river-side .tile .tile-suit {
+  font-size: 6px !important;
+  display: none;
+}
+.discard-river-side .tile .tile-honor {
+  font-size: 10px !important;
 }
 .discard-river-left {
-  position: absolute; right: -30px; top: 0;
+  position: absolute; right: -38px; top: 0;
 }
 .discard-river-right {
-  position: absolute; left: -30px; top: 0;
+  position: absolute; left: -38px; top: 0;
+}
+
+/* Discard river player label */
+.discard-river-label {
+  font-size: 9px;
+  color: rgba(255,255,255,0.5);
+  text-align: center;
+  width: 100%;
+  padding: 1px 0;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 /* ═══ PLAYER WIND DISPLAY ═══ */

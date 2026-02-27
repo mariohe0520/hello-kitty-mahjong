@@ -87,9 +87,9 @@
 .tile-back { font-size: 16px; line-height: 1; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2)); }
 
 /* ─── Tile text content ─── */
-.tile-rank { font-size: 18px; line-height: 1; font-weight: 900; text-shadow: 0 1px 1px rgba(0,0,0,0.1); pointer-events: none; }
-.tile-suit { font-size: 9px; line-height: 1; margin-top: 1px; font-weight: 700; pointer-events: none; }
-.tile-honor { font-size: 20px; font-weight: 900; line-height: 1; text-shadow: 0 1px 1px rgba(0,0,0,0.1); pointer-events: none; }
+.tile-rank { font-size: 20px; line-height: 1; font-weight: 900; text-shadow: 0 1px 2px rgba(0,0,0,0.15); pointer-events: none; z-index: 1; position: relative; }
+.tile-suit { font-size: 10px; line-height: 1; margin-top: 1px; font-weight: 800; pointer-events: none; z-index: 1; position: relative; }
+.tile-honor { font-size: 22px; font-weight: 900; line-height: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.15); pointer-events: none; z-index: 1; position: relative; }
 
 /* ─── Small tiles ─── */
 .tile-sm {
@@ -103,16 +103,16 @@
 .tile-sm .tile-back { font-size: 11px; }
 .tile-sm::before { height: 3px; }
 
-/* ─── Mini tiles (discard pool) ─── */
+/* ─── Mini tiles (discard pool) — now larger for readability ─── */
 .tile-mini {
-  width: 18px; height: 24px; min-width: 18px; min-height: 24px;
-  border-radius: 3px;
-  box-shadow: 0 1px 0 0 #d8d0b8, 0 2px 0 0 #c0b890, 0 3px 2px rgba(0,0,0,0.15);
+  width: 28px; height: 36px; min-width: 28px; min-height: 36px;
+  border-radius: 4px;
+  box-shadow: 0 1px 0 0 #d8d0b8, 0 2px 0 0 #c0b890, 0 3px 2px rgba(0,0,0,0.2);
 }
-.tile-mini .tile-rank { font-size: 10px; }
-.tile-mini .tile-suit { font-size: 6px; }
-.tile-mini .tile-honor { font-size: 10px; }
-.tile-mini .tile-back { font-size: 8px; }
+.tile-mini .tile-rank { font-size: 14px; font-weight: 900; }
+.tile-mini .tile-suit { font-size: 8px; }
+.tile-mini .tile-honor { font-size: 15px; font-weight: 900; }
+.tile-mini .tile-back { font-size: 10px; }
 .tile-mini::before, .tile-mini::after { display: none; }
 
 /* ─── Animations ─── */

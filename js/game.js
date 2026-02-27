@@ -73,181 +73,375 @@ const Game = (() => {
 
     function isMuted() { return muted; }
 
-    // ─── Tile tap: bamboo click ───
+    // ─── Tile tap: crisp ceramic click (selecting a tile) ───
     function playTap() {
       const c = getCtx(); const m = getMaster();
+      const t = c.currentTime;
+
+      // Sharp transient click — like tapping a ceramic tile on a table edge
+      const clickBuf = c.createBuffer(1, Math.floor(c.sampleRate * 0.025), c.sampleRate);
+      const clickData = clickBuf.getChannelData(0);
+      for (let i = 0; i < clickData.length; i++) {
+        const env = Math.exp(-i / (clickData.length * 0.08));
+        // Mix of noise + high-freq sine for the "tink" quality
+        clickData[i] = ((Math.random() * 2 - 1) * 0.6 + Math.sin(i * 0.35) * 0.4) * env;
+      }
+      const clickSrc = c.createBufferSource();
+      clickSrc.buffer = clickBuf;
+      const clickFilter = c.createBiquadFilter();
+      clickFilter.type = 'highpass';
+      clickFilter.frequency.value = 2500;
+      clickFilter.Q.value = 1.5;
+      const clickGain = c.createGain();
+      clickGain.gain.setValueAtTime(0.35, t);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.025);
+      clickSrc.connect(clickFilter);
+      clickFilter.connect(clickGain);
+      clickGain.connect(m);
+      clickSrc.start(t);
+
+      // Subtle resonant ping — ceramic resonance
       const osc = c.createOscillator();
-      const gain = c.createGain();
-      const filter = c.createBiquadFilter();
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(1000 + Math.random() * 200, c.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(600, c.currentTime + 0.04);
-      filter.type = 'highpass';
-      filter.frequency.value = 800;
-      gain.gain.setValueAtTime(0.3, c.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.08);
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(m);
-      osc.start(c.currentTime);
-      osc.stop(c.currentTime + 0.08);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(3200 + Math.random() * 400, t);
+      osc.frequency.exponentialRampToValueAtTime(2000, t + 0.04);
+      const oscGain = c.createGain();
+      oscGain.gain.setValueAtTime(0.08, t);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+      osc.connect(oscGain);
+      oscGain.connect(m);
+      osc.start(t);
+      osc.stop(t + 0.05);
     }
 
-    // ─── Tile place: deep thud ───
+    // ─── Tile place/discard: realistic tile-on-table slam ───
     function playPlace() {
       const c = getCtx(); const m = getMaster();
-      // Body thud
-      const osc1 = c.createOscillator();
-      const gain1 = c.createGain();
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(400, c.currentTime);
-      osc1.frequency.exponentialRampToValueAtTime(150, c.currentTime + 0.1);
-      gain1.gain.setValueAtTime(0.35, c.currentTime);
-      gain1.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.15);
-      osc1.connect(gain1);
-      gain1.connect(m);
-      osc1.start(c.currentTime);
-      osc1.stop(c.currentTime + 0.15);
+      const t = c.currentTime;
 
-      // Impact noise
-      const buf = c.createBuffer(1, c.sampleRate * 0.05, c.sampleRate);
-      const data = buf.getChannelData(0);
-      for (let i = 0; i < data.length; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.15));
+      // Layer 1: Low-frequency body thump (tile mass hitting table felt)
+      const thumpBuf = c.createBuffer(1, Math.floor(c.sampleRate * 0.08), c.sampleRate);
+      const thumpData = thumpBuf.getChannelData(0);
+      for (let i = 0; i < thumpData.length; i++) {
+        const phase = i / c.sampleRate;
+        const env = Math.exp(-phase * 50);
+        thumpData[i] = Math.sin(phase * 2 * Math.PI * 180) * env * 0.8
+                      + Math.sin(phase * 2 * Math.PI * 90) * env * 0.4;
       }
-      const noise = c.createBufferSource();
-      noise.buffer = buf;
-      const nGain = c.createGain();
-      nGain.gain.setValueAtTime(0.15, c.currentTime);
-      nGain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.06);
-      const nFilter = c.createBiquadFilter();
-      nFilter.type = 'lowpass';
-      nFilter.frequency.value = 2000;
-      noise.connect(nFilter);
-      nFilter.connect(nGain);
-      nGain.connect(m);
-      noise.start(c.currentTime);
+      const thumpSrc = c.createBufferSource();
+      thumpSrc.buffer = thumpBuf;
+      const thumpGain = c.createGain();
+      thumpGain.gain.setValueAtTime(0.4, t);
+      thumpGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+      thumpSrc.connect(thumpGain);
+      thumpGain.connect(m);
+      thumpSrc.start(t);
+
+      // Layer 2: High-frequency crack/click (hard tile surface impact)
+      const crackBuf = c.createBuffer(1, Math.floor(c.sampleRate * 0.015), c.sampleRate);
+      const crackData = crackBuf.getChannelData(0);
+      for (let i = 0; i < crackData.length; i++) {
+        const env = Math.exp(-i / (crackData.length * 0.06));
+        crackData[i] = (Math.random() * 2 - 1) * env;
+      }
+      const crackSrc = c.createBufferSource();
+      crackSrc.buffer = crackBuf;
+      const crackFilter = c.createBiquadFilter();
+      crackFilter.type = 'highpass';
+      crackFilter.frequency.value = 3000;
+      crackFilter.Q.value = 0.8;
+      const crackGain = c.createGain();
+      crackGain.gain.setValueAtTime(0.3, t);
+      crackGain.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
+      crackSrc.connect(crackFilter);
+      crackFilter.connect(crackGain);
+      crackGain.connect(m);
+      crackSrc.start(t);
+
+      // Layer 3: Mid resonance (table surface vibration)
+      const osc = c.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(350 + Math.random() * 60, t);
+      osc.frequency.exponentialRampToValueAtTime(120, t + 0.12);
+      const oscGain = c.createGain();
+      oscGain.gain.setValueAtTime(0.15, t);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      osc.connect(oscGain);
+      oscGain.connect(m);
+      osc.start(t);
+      osc.stop(t + 0.12);
     }
 
-    // ─── Peng: double click ───
+    // ─── Peng: decisive double-tile slam (two tiles slapped on table) ───
     function playPeng() {
       const c = getCtx(); const m = getMaster();
-      [0, 0.1].forEach(offset => {
-        const osc = c.createOscillator();
-        const gain = c.createGain();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(900, c.currentTime + offset);
-        osc.frequency.exponentialRampToValueAtTime(500, c.currentTime + offset + 0.05);
-        gain.gain.setValueAtTime(0.3, c.currentTime + offset);
-        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + offset + 0.1);
-        osc.connect(gain);
-        gain.connect(m);
-        osc.start(c.currentTime + offset);
-        osc.stop(c.currentTime + offset + 0.1);
-      });
-    }
+      const t = c.currentTime;
 
-    // ─── Gang: deep resonance ───
-    function playGang() {
-      const c = getCtx(); const m = getMaster();
-      const freqs = [150, 200, 300];
-      freqs.forEach((f, i) => {
-        const osc = c.createOscillator();
-        const gain = c.createGain();
-        osc.type = i === 0 ? 'sine' : 'triangle';
-        osc.frequency.setValueAtTime(f, c.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(f * 0.5, c.currentTime + 0.4);
-        gain.gain.setValueAtTime(0.25, c.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.4);
-        osc.connect(gain);
-        gain.connect(m);
-        osc.start(c.currentTime);
-        osc.stop(c.currentTime + 0.4);
-      });
-    }
-
-    // ─── Hu: rising chord + shimmer ───
-    function playHu() {
-      const c = getCtx(); const m = getMaster();
-      const notes = [261.6, 329.6, 392.0, 523.3]; // C4-E4-G4-C5
-      notes.forEach((f, i) => {
-        const osc = c.createOscillator();
-        const gain = c.createGain();
-        osc.type = 'sine';
-        const start = c.currentTime + i * 0.12;
-        osc.frequency.setValueAtTime(f, start);
-        gain.gain.setValueAtTime(0, start);
-        gain.gain.linearRampToValueAtTime(0.2, start + 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.8);
-        osc.connect(gain);
-        gain.connect(m);
-        osc.start(start);
-        osc.stop(start + 0.8);
-      });
-
-      // Shimmer: high frequency noise burst
-      setTimeout(() => {
-        const c2 = getCtx();
-        const buf = c2.createBuffer(1, c2.sampleRate * 0.3, c2.sampleRate);
+      // Two sharp tile impacts in quick succession
+      [0, 0.08].forEach(offset => {
+        // Hard ceramic click
+        const buf = c.createBuffer(1, Math.floor(c.sampleRate * 0.04), c.sampleRate);
         const data = buf.getChannelData(0);
         for (let i = 0; i < data.length; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.3)) * 0.3;
+          const phase = i / c.sampleRate;
+          const env = Math.exp(-phase * 80);
+          data[i] = ((Math.random() * 2 - 1) * 0.5 +
+                     Math.sin(phase * 2 * Math.PI * 2800) * 0.3 +
+                     Math.sin(phase * 2 * Math.PI * 180) * 0.5) * env;
         }
-        const noise = c2.createBufferSource();
-        noise.buffer = buf;
-        const filter = c2.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.value = 6000;
-        filter.Q.value = 2;
-        const nGain = c2.createGain();
-        nGain.gain.setValueAtTime(0.08, c2.currentTime);
-        nGain.gain.exponentialRampToValueAtTime(0.001, c2.currentTime + 0.3);
-        noise.connect(filter);
-        filter.connect(nGain);
-        nGain.connect(getMaster());
-        noise.start(c2.currentTime);
-      }, 400);
+        const src = c.createBufferSource();
+        src.buffer = buf;
+        const gain = c.createGain();
+        gain.gain.setValueAtTime(0.4, t + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + offset + 0.05);
+        src.connect(gain);
+        gain.connect(m);
+        src.start(t + offset);
+      });
+
+      // Satisfying table resonance after the double slam
+      const osc = c.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(250, t + 0.08);
+      osc.frequency.exponentialRampToValueAtTime(100, t + 0.25);
+      const oscGain = c.createGain();
+      oscGain.gain.setValueAtTime(0.12, t + 0.08);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+      osc.connect(oscGain);
+      oscGain.connect(m);
+      osc.start(t + 0.08);
+      osc.stop(t + 0.25);
     }
 
-    // ─── Draw: soft slide ───
+    // ─── Gang: heavy quad-tile slam with deep resonance ───
+    function playGang() {
+      const c = getCtx(); const m = getMaster();
+      const t = c.currentTime;
+
+      // Four rapid tile impacts
+      [0, 0.05, 0.1, 0.14].forEach((offset, idx) => {
+        const buf = c.createBuffer(1, Math.floor(c.sampleRate * 0.03), c.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+          const phase = i / c.sampleRate;
+          const env = Math.exp(-phase * 100);
+          data[i] = ((Math.random() * 2 - 1) * 0.6 +
+                     Math.sin(phase * 2 * Math.PI * (2500 + idx * 200)) * 0.3) * env;
+        }
+        const src = c.createBufferSource();
+        src.buffer = buf;
+        const gain = c.createGain();
+        const vol = 0.25 + idx * 0.05; // Crescendo effect
+        gain.gain.setValueAtTime(vol, t + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + offset + 0.04);
+        src.connect(gain);
+        gain.connect(m);
+        src.start(t + offset);
+      });
+
+      // Deep bass thump for the combined weight
+      const osc1 = c.createOscillator();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(120, t + 0.14);
+      osc1.frequency.exponentialRampToValueAtTime(50, t + 0.5);
+      const osc1Gain = c.createGain();
+      osc1Gain.gain.setValueAtTime(0.3, t + 0.14);
+      osc1Gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+      osc1.connect(osc1Gain);
+      osc1Gain.connect(m);
+      osc1.start(t + 0.14);
+      osc1.stop(t + 0.5);
+
+      // Table vibration buzz
+      const buzzBuf = c.createBuffer(1, Math.floor(c.sampleRate * 0.2), c.sampleRate);
+      const buzzData = buzzBuf.getChannelData(0);
+      for (let i = 0; i < buzzData.length; i++) {
+        const phase = i / c.sampleRate;
+        buzzData[i] = (Math.random() * 2 - 1) * Math.exp(-phase * 15) * 0.1;
+      }
+      const buzzSrc = c.createBufferSource();
+      buzzSrc.buffer = buzzBuf;
+      const buzzFilter = c.createBiquadFilter();
+      buzzFilter.type = 'lowpass';
+      buzzFilter.frequency.value = 400;
+      const buzzGain = c.createGain();
+      buzzGain.gain.setValueAtTime(0.15, t + 0.14);
+      buzzGain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+      buzzSrc.connect(buzzFilter);
+      buzzFilter.connect(buzzGain);
+      buzzGain.connect(m);
+      buzzSrc.start(t + 0.14);
+    }
+
+    // ─── Hu: triumphant tile reveal + celebratory chime ───
+    function playHu() {
+      const c = getCtx(); const m = getMaster();
+      const t = c.currentTime;
+
+      // Dramatic tile slam first
+      const slamBuf = c.createBuffer(1, Math.floor(c.sampleRate * 0.06), c.sampleRate);
+      const slamData = slamBuf.getChannelData(0);
+      for (let i = 0; i < slamData.length; i++) {
+        const phase = i / c.sampleRate;
+        const env = Math.exp(-phase * 60);
+        slamData[i] = ((Math.random() * 2 - 1) * 0.4 +
+                       Math.sin(phase * 2 * Math.PI * 250) * 0.6) * env;
+      }
+      const slamSrc = c.createBufferSource();
+      slamSrc.buffer = slamBuf;
+      const slamGain = c.createGain();
+      slamGain.gain.setValueAtTime(0.35, t);
+      slamGain.gain.exponentialRampToValueAtTime(0.01, t + 0.06);
+      slamSrc.connect(slamGain);
+      slamGain.connect(m);
+      slamSrc.start(t);
+
+      // Rising pentatonic celebration (Chinese pentatonic: C D E G A)
+      const notes = [523.3, 587.3, 659.3, 784.0, 880.0, 1046.5]; // C5 D5 E5 G5 A5 C6
+      notes.forEach((f, i) => {
+        const osc = c.createOscillator();
+        osc.type = 'sine';
+        const start = t + 0.1 + i * 0.08;
+        osc.frequency.setValueAtTime(f, start);
+        const oscGain = c.createGain();
+        oscGain.gain.setValueAtTime(0, start);
+        oscGain.gain.linearRampToValueAtTime(0.15, start + 0.02);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, start + 0.6);
+        osc.connect(oscGain);
+        oscGain.connect(m);
+        osc.start(start);
+        osc.stop(start + 0.6);
+
+        // Add harmonics for richness
+        const osc2 = c.createOscillator();
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(f * 2, start);
+        const osc2Gain = c.createGain();
+        osc2Gain.gain.setValueAtTime(0, start);
+        osc2Gain.gain.linearRampToValueAtTime(0.04, start + 0.02);
+        osc2Gain.gain.exponentialRampToValueAtTime(0.001, start + 0.4);
+        osc2.connect(osc2Gain);
+        osc2Gain.connect(m);
+        osc2.start(start);
+        osc2.stop(start + 0.4);
+      });
+
+      // Shimmering tail — metallic gong-like wash
+      setTimeout(() => {
+        const c2 = getCtx();
+        const t2 = c2.currentTime;
+        const shimBuf = c2.createBuffer(2, Math.floor(c2.sampleRate * 0.8), c2.sampleRate);
+        for (let ch = 0; ch < 2; ch++) {
+          const shimData = shimBuf.getChannelData(ch);
+          for (let i = 0; i < shimData.length; i++) {
+            const phase = i / c2.sampleRate;
+            const env = Math.exp(-phase * 3);
+            shimData[i] = (
+              Math.sin(phase * 2 * Math.PI * 4186) * 0.05 +
+              Math.sin(phase * 2 * Math.PI * 5274) * 0.03 +
+              (Math.random() * 2 - 1) * 0.02
+            ) * env;
+          }
+        }
+        const shimSrc = c2.createBufferSource();
+        shimSrc.buffer = shimBuf;
+        const shimGain = c2.createGain();
+        shimGain.gain.setValueAtTime(0.12, t2);
+        shimGain.gain.exponentialRampToValueAtTime(0.001, t2 + 0.8);
+        shimSrc.connect(shimGain);
+        shimGain.connect(getMaster());
+        shimSrc.start(t2);
+      }, 500);
+    }
+
+    // ─── Draw: tile sliding off wall (scraping ceramic) ───
     function playDraw() {
       const c = getCtx(); const m = getMaster();
-      const buf = c.createBuffer(1, c.sampleRate * 0.15, c.sampleRate);
-      const data = buf.getChannelData(0);
-      for (let i = 0; i < data.length; i++) {
-        const t = i / c.sampleRate;
-        data[i] = (Math.random() * 2 - 1) * 0.15 * Math.sin(t * 800) * Math.exp(-t * 20);
+      const t = c.currentTime;
+      const duration = 0.12;
+
+      // Sliding friction noise (tile dragged across other tiles)
+      const slideBuf = c.createBuffer(1, Math.floor(c.sampleRate * duration), c.sampleRate);
+      const slideData = slideBuf.getChannelData(0);
+      for (let i = 0; i < slideData.length; i++) {
+        const phase = i / c.sampleRate;
+        // Ramp up then down for a slide feel
+        const env = Math.sin(phase / duration * Math.PI) * Math.exp(-phase * 8);
+        slideData[i] = (Math.random() * 2 - 1) * env;
       }
-      const noise = c.createBufferSource();
-      noise.buffer = buf;
-      const filter = c.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(2000, c.currentTime);
-      filter.frequency.linearRampToValueAtTime(800, c.currentTime + 0.15);
-      filter.Q.value = 1;
-      const gain = c.createGain();
-      gain.gain.setValueAtTime(0.2, c.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.15);
-      noise.connect(filter);
-      filter.connect(gain);
-      gain.connect(m);
-      noise.start(c.currentTime);
+      const slideSrc = c.createBufferSource();
+      slideSrc.buffer = slideBuf;
+      const slideFilter = c.createBiquadFilter();
+      slideFilter.type = 'bandpass';
+      slideFilter.frequency.setValueAtTime(3500, t);
+      slideFilter.frequency.linearRampToValueAtTime(1500, t + duration);
+      slideFilter.Q.value = 1.2;
+      const slideGain = c.createGain();
+      slideGain.gain.setValueAtTime(0.18, t);
+      slideGain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+      slideSrc.connect(slideFilter);
+      slideFilter.connect(slideGain);
+      slideGain.connect(m);
+      slideSrc.start(t);
+
+      // Subtle click as tile lifts off
+      const clickBuf = c.createBuffer(1, Math.floor(c.sampleRate * 0.01), c.sampleRate);
+      const clickData = clickBuf.getChannelData(0);
+      for (let i = 0; i < clickData.length; i++) {
+        clickData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (clickData.length * 0.1));
+      }
+      const clickSrc = c.createBufferSource();
+      clickSrc.buffer = clickBuf;
+      const clickFilter = c.createBiquadFilter();
+      clickFilter.type = 'highpass';
+      clickFilter.frequency.value = 4000;
+      const clickGain = c.createGain();
+      clickGain.gain.setValueAtTime(0.12, t + duration * 0.7);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, t + duration * 0.7 + 0.015);
+      clickSrc.connect(clickFilter);
+      clickFilter.connect(clickGain);
+      clickGain.connect(m);
+      clickSrc.start(t + duration * 0.7);
     }
 
-    // ─── Chi: light tap ───
+    // ─── Chi: quick tile arrangement click (sorting tiles into sequence) ───
     function playChi() {
       const c = getCtx(); const m = getMaster();
+      const t = c.currentTime;
+
+      // Three light clicks in ascending pitch (arranging the sequence)
+      [0, 0.06, 0.12].forEach((offset, idx) => {
+        const buf = c.createBuffer(1, Math.floor(c.sampleRate * 0.02), c.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+          const phase = i / c.sampleRate;
+          const freq = 3000 + idx * 600; // Ascending pitch
+          const env = Math.exp(-phase * 120);
+          data[i] = (Math.sin(phase * 2 * Math.PI * freq) * 0.4 +
+                     (Math.random() * 2 - 1) * 0.3) * env;
+        }
+        const src = c.createBufferSource();
+        src.buffer = buf;
+        const gain = c.createGain();
+        gain.gain.setValueAtTime(0.2, t + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + offset + 0.03);
+        src.connect(gain);
+        gain.connect(m);
+        src.start(t + offset);
+      });
+
+      // Soft table tap at end
       const osc = c.createOscillator();
-      const gain = c.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(1200, c.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(800, c.currentTime + 0.06);
-      gain.gain.setValueAtTime(0.25, c.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.12);
-      osc.connect(gain);
-      gain.connect(m);
-      osc.start(c.currentTime);
-      osc.stop(c.currentTime + 0.12);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(300, t + 0.15);
+      osc.frequency.exponentialRampToValueAtTime(100, t + 0.22);
+      const oscGain = c.createGain();
+      oscGain.gain.setValueAtTime(0.08, t + 0.15);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+      osc.connect(oscGain);
+      oscGain.connect(m);
+      osc.start(t + 0.15);
+      osc.stop(t + 0.22);
     }
 
     return {
@@ -1302,21 +1496,32 @@ const Game = (() => {
     const river = document.getElementById(riverId);
     if (!river) return;
 
-    // Remove last-discard highlight from all previous tiles
+    // Remove last-discard highlight from ALL rivers' tiles
     document.querySelectorAll('.discard-river .tile.last-discard').forEach(el => {
       el.classList.remove('last-discard');
     });
 
     const tileEl = renderTile(tile, { small: true, mini: true, faceDown: false });
     tileEl.classList.add('last-discard');
+
+    // Add tooltip showing tile name
+    tileEl.title = tile.name || tile.display || '';
+
     tileEl.style.opacity = '0';
-    tileEl.style.transform = 'scale(1.3)';
+    tileEl.style.transform = 'scale(1.5)';
     river.appendChild(tileEl);
 
+    // Animate in with a satisfying pop
     requestAnimationFrame(() => {
-      tileEl.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      tileEl.style.transition = 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
       tileEl.style.opacity = '1';
       tileEl.style.transform = 'scale(1)';
+    });
+
+    // Auto-scroll the river to show the latest tile
+    requestAnimationFrame(() => {
+      river.scrollLeft = river.scrollWidth;
+      river.scrollTop = river.scrollHeight;
     });
   }
 
@@ -1738,6 +1943,10 @@ const Game = (() => {
     if (!bar) return;
     bar.style.display = 'flex';
 
+    // Remove any existing tile preview
+    const existingPreview = bar.querySelector('.action-tile-preview');
+    if (existingPreview) existingPreview.remove();
+
     const btnMap = {
       chi: '.btn-chi',
       peng: '.btn-peng',
@@ -1752,7 +1961,42 @@ const Game = (() => {
       if (btn) btn.style.display = 'none';
     });
 
-    // Show requested
+    // Show tile preview when reacting to a discard (chi/peng/gang/hu on opponent's discard)
+    const isReaction = actions.some(a => ['chi', 'peng', 'gang', 'hu'].includes(a));
+    const tile = state.lastDiscard;
+    const fromPlayer = state.lastDiscardPlayer;
+
+    if (isReaction && tile && fromPlayer >= 0 && fromPlayer !== 0) {
+      const preview = document.createElement('div');
+      preview.className = 'action-tile-preview';
+
+      const player = state.players[fromPlayer];
+      const tileEl = renderTile(tile, { faceDown: false });
+      // Remove click handlers from preview tile
+      tileEl.style.cursor = 'default';
+      tileEl.style.pointerEvents = 'none';
+
+      const label = document.createElement('span');
+      label.className = 'preview-label';
+      label.textContent = '打出:';
+
+      const fromEl = document.createElement('span');
+      fromEl.className = 'preview-from';
+      fromEl.innerHTML = `<span class="preview-avatar">${player.avatar}</span> ${player.name}`;
+
+      const container = document.createElement('div');
+      container.className = 'preview-tile-container';
+      container.appendChild(tileEl);
+
+      preview.appendChild(label);
+      preview.appendChild(container);
+      preview.appendChild(fromEl);
+
+      // Insert preview at the beginning of action bar
+      bar.insertBefore(preview, bar.firstChild);
+    }
+
+    // Show requested buttons
     for (const action of actions) {
       const btn = bar.querySelector(btnMap[action]);
       if (btn) {
@@ -1779,6 +2023,9 @@ const Game = (() => {
       bar.querySelectorAll('.action-btn').forEach(btn => {
         btn.style.animation = '';
       });
+      // Remove tile preview
+      const preview = bar.querySelector('.action-tile-preview');
+      if (preview) preview.remove();
     }
   }
 
@@ -2584,30 +2831,53 @@ const Game = (() => {
     overlay.className = 'queyimen-overlay';
     overlay.style.zIndex = '450';
 
-    const optionsHtml = options.map((opt, i) => {
+    // Build the panel
+    const panel = document.createElement('div');
+    panel.className = 'queyimen-panel';
+    panel.innerHTML = '<h3>选择吃牌组合</h3><p>选择要组成的顺子</p>';
+
+    const optionsContainer = document.createElement('div');
+    optionsContainer.className = 'queyimen-options';
+    optionsContainer.style.flexDirection = 'column';
+    optionsContainer.style.gap = '12px';
+
+    options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'queyimen-btn';
+      btn.dataset.idx = i;
+      btn.style.cssText = 'display:flex;align-items:center;gap:6px;padding:12px 16px;min-width:140px;justify-content:center;';
+
       const ranks = opt.sort((a, b) => a - b);
-      const display = ranks.map(r => `${r}${TILE_SUITS[tile.suit]?.name || ''}`).join(' ');
-      return `<button class="queyimen-btn" data-idx="${i}" style="font-size:16px;min-width:80px;">${display}</button>`;
-    }).join('');
+      ranks.forEach(r => {
+        // Find the tile key for this suit+rank
+        const suitPrefix = { wan: 'w', tiao: 't', tong: 'b' }[tile.suit] || '';
+        const tileKey = suitPrefix + r;
+        const tileData = TILES[tileKey];
+        if (tileData) {
+          const fakeTile = { ...tileData, key: tileKey, id: tileKey + '_chi_preview' };
+          const tileEl = renderTile(fakeTile, { faceDown: false, small: false });
+          tileEl.style.cssText = 'width:40px;height:52px;min-width:40px;min-height:52px;pointer-events:none;cursor:default;flex-shrink:0;';
+          // Highlight the discarded tile being consumed
+          if (r === tile.rank) {
+            tileEl.style.border = '2px solid #f5c518';
+            tileEl.style.boxShadow = '0 0 10px rgba(245,197,24,0.5)';
+          }
+          btn.appendChild(tileEl);
+        }
+      });
 
-    overlay.innerHTML = `
-      <div class="queyimen-panel">
-        <h3>选择吃牌组合</h3>
-        <p>选择要组成的顺子</p>
-        <div class="queyimen-options">${optionsHtml}</div>
-      </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    overlay.querySelectorAll('.queyimen-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const idx = parseInt(btn.dataset.idx);
         overlay.remove();
         Sound.playTap();
-        handleChi(0, tile, options[idx], state.lastDiscardPlayer);
+        handleChi(0, tile, options[i], state.lastDiscardPlayer);
       });
+
+      optionsContainer.appendChild(btn);
     });
+
+    panel.appendChild(optionsContainer);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
   }
 
   function peng() {
