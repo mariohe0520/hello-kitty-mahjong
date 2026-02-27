@@ -581,6 +581,12 @@ const Game = (() => {
         cancelAnimationFrame(rafId);
         rafId = null;
       }
+      // Return all active particles to the pool
+      while (active.length > 0) {
+        const p = active.pop();
+        p.el.style.display = 'none';
+        pool.push(p.el);
+      }
     }
 
     // ─── Effect: Gold sparkles ───
@@ -1662,6 +1668,7 @@ const Game = (() => {
     state.currentPlayer = playerIndex;
     state.turnPhase = 'draw';
     state.selectedTile = null;
+    state.lastDrawnTile = null; // Clear stale drawn tile reference
     state.turnCount++;
 
     // Update turn indicator
@@ -2191,6 +2198,7 @@ const Game = (() => {
     showActionText('杠！', '#9b59b6');
     Sound.playGang();
     Anim.screenShake(6, 400);
+    state.players[playerIndex].gangCount++;
     if (playerIndex === 0 && typeof Stats !== 'undefined') Stats.recordAction('gang');
     if (typeof Commentary !== 'undefined') Commentary.onAction('gang', playerIndex, state);
 
@@ -2261,6 +2269,9 @@ const Game = (() => {
     showActionText('杠！', '#9b59b6');
     Sound.playGang();
     Anim.screenShake(6, 400);
+    state.players[playerIndex].gangCount++;
+    if (playerIndex === 0 && typeof Stats !== 'undefined') Stats.recordAction('gang');
+    if (typeof Commentary !== 'undefined') Commentary.onAction('gang', playerIndex, state);
 
     const player = state.players[playerIndex];
     const gangTiles = [];
@@ -2323,6 +2334,9 @@ const Game = (() => {
     showActionText('杠！', '#9b59b6');
     Sound.playGang();
     Anim.screenShake(6, 400);
+    state.players[playerIndex].gangCount++;
+    if (playerIndex === 0 && typeof Stats !== 'undefined') Stats.recordAction('gang');
+    if (typeof Commentary !== 'undefined') Commentary.onAction('gang', playerIndex, state);
 
     const player = state.players[playerIndex];
 
@@ -2446,6 +2460,14 @@ const Game = (() => {
 
     const player = state.players[playerIndex];
 
+    // For ron (not tsumo), remove the winning tile from the discard river
+    if (!isTsumo) {
+      removeLastDiscard();
+      // Add the winning tile to the player's hand for display purposes
+      player.hand.push(winTile);
+      player.hand = TileUtils.sortHand(player.hand);
+    }
+
     // Epic celebration
     showActionText('胡！🎉', '#f5c518');
     Sound.playHu();
@@ -2469,8 +2491,8 @@ const Game = (() => {
     }
 
     // Calculate score
-    // For tsumo, hand already has 14 tiles; for ron, add the win tile
-    const handForScoring = isTsumo ? [...player.hand] : [...player.hand, winTile];
+    // Hand now has 14 tiles for both tsumo and ron (ron tile was added above)
+    const handForScoring = [...player.hand];
     const scoreResult = rules.calculateScore(
       handForScoring,
       player.melds,
@@ -2493,9 +2515,9 @@ const Game = (() => {
       }
       player.score += points * 3;
     } else {
-      const ronPayment = points * 3;
-      state.players[state.lastDiscardPlayer].score -= ronPayment;
-      player.score += ronPayment;
+      // Ron: only the discarder pays (not multiplied by 3)
+      state.players[state.lastDiscardPlayer].score -= points;
+      player.score += points;
     }
 
     player.hasWon = true;
@@ -2813,20 +2835,29 @@ const Game = (() => {
 
   // ─── Draw from end of wall (for gang replacement) ───
   function drawTileFromEnd(playerIndex) {
+    // Check that there are still tiles between drawIndex and end of wall
     if (state.drawIndex >= state.wall.length) {
       handleDrawGame();
       return null;
     }
-    // Take from the end
+    // Take from the end of the wall (for gang replacement draws)
     const tile = state.wall[state.wall.length - 1];
     state.wall.pop();
+    // After popping, re-check that wall is still valid
+    if (state.drawIndex > state.wall.length) {
+      // Wall fully consumed after pop
+      state.players[playerIndex].hand.push(tile);
+      state.players[playerIndex].hand = TileUtils.sortHand(state.players[playerIndex].hand);
+      updateRemainingTiles();
+      return tile;
+    }
     state.players[playerIndex].hand.push(tile);
     state.players[playerIndex].hand = TileUtils.sortHand(state.players[playerIndex].hand);
     updateRemainingTiles();
     return tile;
   }
 
-  // ─── Remove last discard from pool/river ───
+  // ─── Remove last discard from river (when claimed by chi/peng/gang) ───
   function removeLastDiscard() {
     if (state.discardHistory.length > 0) {
       const lastEntry = state.discardHistory[state.discardHistory.length - 1];
@@ -2841,11 +2872,9 @@ const Game = (() => {
       }
       state.discardHistory.pop();
     }
-    const pool = document.getElementById('discard-pool');
-    if (pool && pool.lastChild) {
-      pool.lastChild.remove();
+    if (state.discardPile.length > 0) {
+      state.discardPile.pop();
     }
-    state.discardPile.pop();
   }
 
   // ╔═══════════════════════════════════════════════════════════╗
@@ -2853,7 +2882,7 @@ const Game = (() => {
   // ╚═══════════════════════════════════════════════════════════╝
 
   function chi() {
-    if (state.turnPhase !== 'action') return;
+    if (!state || state.turnPhase !== 'action') return;
     const tile = state.lastDiscard;
     if (!tile) return;
 
@@ -2923,7 +2952,7 @@ const Game = (() => {
   }
 
   function peng() {
-    if (state.turnPhase !== 'action') return;
+    if (!state || state.turnPhase !== 'action') return;
     const tile = state.lastDiscard;
     if (!tile) return;
     if (!rules.canPeng(state.players[0].hand, tile)) return;
@@ -2931,7 +2960,7 @@ const Game = (() => {
   }
 
   function gang() {
-    if (state.turnPhase !== 'action') return;
+    if (!state || state.turnPhase !== 'action') return;
 
     const player = state.players[0];
     const tile = state.lastDiscard;
@@ -2958,7 +2987,7 @@ const Game = (() => {
   }
 
   function hu() {
-    if (state.turnPhase !== 'action') return;
+    if (!state || state.turnPhase !== 'action') return;
 
     const player = state.players[0];
 
@@ -2986,6 +3015,7 @@ const Game = (() => {
   }
 
   function pass() {
+    if (!state) return;
     hideActionBar();
     state.turnPhase = 'idle';
     state._pendingReactions = null;
@@ -3278,7 +3308,8 @@ const Game = (() => {
       return;
     }
 
-    const level = typeof Campaign !== 'undefined' ? Campaign.getLevel(state.campaignLevel) : null;
+    const levelId = typeof state.campaignLevel === 'object' ? state.campaignLevel.id : state.campaignLevel;
+    const level = typeof Campaign !== 'undefined' ? Campaign.getLevel(levelId) : null;
     if (!level) {
       bar.style.display = 'none';
       return;
@@ -3297,7 +3328,9 @@ const Game = (() => {
   function verifyCampaignGoal(playerIndex, scoreResult, isTsumo) {
     if (!state.campaignLevel || typeof Campaign === 'undefined') return { met: false, stars: 1 };
 
-    const level = Campaign.getLevel(state.campaignLevel);
+    // state.campaignLevel may be the full level object or just an ID
+    const levelId = typeof state.campaignLevel === 'object' ? state.campaignLevel.id : state.campaignLevel;
+    const level = Campaign.getLevel(levelId);
     if (!level) return { met: false, stars: 1 };
 
     const player = state.players[playerIndex];
@@ -3428,11 +3461,17 @@ const Game = (() => {
 
   function destroy() {
     Particles.stop();
-    if (dustInterval) clearInterval(dustInterval);
+    if (dustInterval) {
+      clearInterval(dustInterval);
+      dustInterval = null;
+    }
     if (typeof Commentary !== 'undefined') Commentary.destroy();
     if (typeof Skills !== 'undefined') Skills.removeSkillButton();
+    // Clean up any lingering action calligraphy elements
+    document.querySelectorAll('.action-calligraphy').forEach(el => el.remove());
     state = null;
     multiRound = null;
+    rules = null;
   }
 
   // ╔═══════════════════════════════════════════════════════════╗

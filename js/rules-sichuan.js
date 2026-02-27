@@ -206,14 +206,6 @@ const SichuanRules = (() => {
     const isQidui = !!qiduiResult;
     const isLongQidui = qiduiResult && qiduiResult[0]?.type === 'longQiDui';
 
-    if (isLongQidui) {
-      fans.push(SCORING.longQiDui);
-      totalFan += SCORING.longQiDui.fan;
-    } else if (isQidui) {
-      fans.push(SCORING.qidui);
-      totalFan += SCORING.qidui.fan;
-    }
-
     // ─── Suit analysis ───
     const allKeys = allTiles.map(t => t.key);
     const suits = new Set(allKeys.map(k => TILES[k]?.suit));
@@ -223,7 +215,6 @@ const SichuanRules = (() => {
     // ─── Check duidui ───
     let isDuidui = false;
     if (!isQidui) {
-      const meldKeys = [];
       // Extract melds to check for all triplets
       const decomps = extractMelds(allTiles);
       if (decomps.length > 0) {
@@ -235,34 +226,38 @@ const SichuanRules = (() => {
       }
     }
 
-    // Pinghu
-    if (!isQidui && !isDuidui && !isQingYi) {
-      fans.push(SCORING.pinghu);
-      totalFan += SCORING.pinghu.fan;
-    }
-
-    // Duidui
-    if (isDuidui) {
-      fans.push(SCORING.duidui);
-      totalFan += SCORING.duidui.fan;
-    }
-
-    // Qingyi
-    if (isQingYi) {
-      fans.push(SCORING.qingyi);
-      totalFan += SCORING.qingyi.fan;
-    }
-
-    // Qing qidui
+    // ─── Assign hand pattern fans (combined patterns are exclusive with their base) ───
     if (isQingYi && isQidui) {
+      // Qing qidui (replaces qingyi + qidui)
       fans.push(SCORING.qingQidui);
       totalFan += SCORING.qingQidui.fan;
-    }
-
-    // Qing duidui
-    if (isQingYi && isDuidui) {
+    } else if (isQingYi && isDuidui) {
+      // Qing duidui (replaces qingyi + duidui)
       fans.push(SCORING.qingDuidui);
       totalFan += SCORING.qingDuidui.fan;
+    } else {
+      // Add base patterns individually
+      if (isLongQidui) {
+        fans.push(SCORING.longQiDui);
+        totalFan += SCORING.longQiDui.fan;
+      } else if (isQidui) {
+        fans.push(SCORING.qidui);
+        totalFan += SCORING.qidui.fan;
+      }
+      if (isDuidui) {
+        fans.push(SCORING.duidui);
+        totalFan += SCORING.duidui.fan;
+      }
+      if (isQingYi) {
+        fans.push(SCORING.qingyi);
+        totalFan += SCORING.qingyi.fan;
+      }
+    }
+
+    // Pinghu (only when no special hand pattern)
+    if (!isQidui && !isLongQidui && !isDuidui && !isQingYi) {
+      fans.push(SCORING.pinghu);
+      totalFan += SCORING.pinghu.fan;
     }
 
     // Duanyao (no 1/9)
@@ -285,8 +280,10 @@ const SichuanRules = (() => {
       totalFan += SCORING.jiangDui.fan;
     }
 
-    // Jin gou diao (hand has only 1 tile before winning)
-    if (hand.length === 1 && lockedMelds.length === 4) {
+    // Jin gou diao (hand has only 1 tile before winning — the winning hand has 2 tiles including win tile)
+    // allTiles includes the win tile, so check for 2 (for ron) or 2 (for tsumo after draw)
+    // The actual check: player had exactly 1 tile in hand before winning
+    if (allTiles.length <= 2 && lockedMelds.length === 4) {
       fans.push(SCORING.jinGouDiao);
       totalFan += SCORING.jinGouDiao.fan;
     }

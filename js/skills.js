@@ -523,7 +523,7 @@ const Skills = (() => {
   }
 
   function showSwapPicker(skill, gameState) {
-    Commentary.announce('选择要交换的牌！', '#e67e22');
+    if (typeof Commentary !== 'undefined') Commentary.announce('选择要交换的牌！', '#e67e22');
     // Mark game as awaiting swap selection
     skillState._pendingSwap = skill;
   }
@@ -548,7 +548,7 @@ const Skills = (() => {
 
     useSkill(skill.charId, gameState);
     showSkillActivation(skill, { type: 'swap_complete' });
-    if (typeof Commentary !== 'undefined') Commentary.announce(`偷天换日！获得了 ${wallTile.name}！`, '#e67e22');
+    if (typeof Commentary !== 'undefined') Commentary.announce(`偷天换日！获得了 ${wallTile.name || wallTile.display || ''}！`, '#e67e22');
     renderSkillButton();
     return true;
   }
