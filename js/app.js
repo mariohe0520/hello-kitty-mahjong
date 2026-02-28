@@ -141,6 +141,7 @@ const App = (() => {
             <span>🪙 ${profile.coins}</span>
           </div>
         </div>
+        <div class="rank-badge" id="home-rank-badge"></div>
       </div>
 
       <!-- Quick Play -->
@@ -233,6 +234,12 @@ const App = (() => {
         <span class="version">Hello Kitty 麻将 v2.0 🎀</span>
       </div>
     `;
+
+    // Render rank badge
+    if (typeof RankSystem !== 'undefined') {
+      const rankBadgeEl = document.getElementById('home-rank-badge');
+      if (rankBadgeEl) RankSystem.renderBadge(rankBadgeEl);
+    }
   }
 
   // ╔═══════════════════════════════════════════════════════════╗

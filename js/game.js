@@ -1098,6 +1098,13 @@ const Game = (() => {
     if (dustInterval) clearInterval(dustInterval);
     dustInterval = setInterval(() => Particles.dustMotes(), 2000);
 
+    // Reset hint system for new game
+    if (typeof HintSystem !== 'undefined') HintSystem.reset();
+
+    // Show tile counter button
+    const tileCounterBtn = document.getElementById('tile-counter-btn');
+    if (tileCounterBtn) tileCounterBtn.style.display = 'flex';
+
     // Show character dialogue on game start
     if (typeof Characters !== 'undefined') {
       for (let i = 1; i < 4; i++) {
@@ -1133,6 +1140,10 @@ const Game = (() => {
     // Hide tenpai indicator
     const tenpaiEl = document.getElementById('tenpai-indicator');
     if (tenpaiEl) tenpaiEl.style.display = 'none';
+    // Hide shanten badge
+    if (typeof ShantenDisplay !== 'undefined') ShantenDisplay.hide();
+    // Hide hint reasoning
+    if (typeof HintSystem !== 'undefined') HintSystem.clearHintHighlight();
     hideActionBar();
   }
 
@@ -1492,7 +1503,14 @@ const Game = (() => {
     await renderHand(playerIndex);
 
     // Update tenpai indicator after discard (hand is now 13 tiles)
-    if (playerIndex === 0) updateTenpaiIndicator(0);
+    if (playerIndex === 0) {
+      updateTenpaiIndicator(0);
+      // Clear hint highlight when player makes a discard
+      if (typeof HintSystem !== 'undefined') HintSystem.clearHintHighlight();
+      // Hide hint button after discard (it was from this turn's draw)
+      const hintBtnEl = document.getElementById('hint-btn');
+      if (hintBtnEl) hintBtnEl.style.display = 'none';
+    }
 
     // Check other players for reactions (hu/gang/peng/chi)
     await checkReactions(playerIndex, tile);
@@ -1703,6 +1721,11 @@ const Game = (() => {
 
       updateTenpaiIndicator(0);
 
+      // Update shanten display
+      if (typeof ShantenDisplay !== 'undefined') {
+        ShantenDisplay.update(player.hand, player.melds);
+      }
+
       if (huResult) {
         showActionBar(['hu']);
       }
@@ -1723,6 +1746,12 @@ const Game = (() => {
       }
 
       state.turnPhase = 'discard';
+      // Show hint button during discard phase
+      const hintBtn = document.getElementById('hint-btn');
+      if (hintBtn && typeof HintSystem !== 'undefined' && HintSystem.hintsLeft > 0) {
+        hintBtn.style.display = 'flex';
+        HintSystem.updateHintButton();
+      }
     } else {
       // AI turn
       handleAITurn(playerIndex, drawn, huResult);
@@ -2029,6 +2058,10 @@ const Game = (() => {
       }
     }
 
+    // Hide standalone hint button when action bar appears (reactions)
+    const hintBtnStandalone = document.getElementById('hint-btn');
+    if (hintBtnStandalone) hintBtnStandalone.style.display = 'none';
+
     // Slide up animation
     bar.style.transform = 'translateY(100%)';
     bar.style.transition = 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
@@ -2048,6 +2081,9 @@ const Game = (() => {
       const preview = bar.querySelector('.action-tile-preview');
       if (preview) preview.remove();
     }
+    // Hide standalone hint button too
+    const hintBtnStandalone = document.getElementById('hint-btn');
+    if (hintBtnStandalone) hintBtnStandalone.style.display = 'none';
   }
 
   // ─── Show full-screen calligraphy action text ───
@@ -2564,6 +2600,24 @@ const Game = (() => {
       } else {
         Stats.recordLoss();
       }
+    }
+
+    // Ranking system update
+    if (typeof RankSystem !== 'undefined') {
+      const totalFan = scoreResult.fans.reduce((s, f) => s + (f.fan || 0), 0);
+      if (playerIndex === 0) {
+        const result = RankSystem.recordWin(isTsumo, totalFan);
+        if (result.rankUp) {
+          setTimeout(() => RankSystem.showRankUpAnimation(result.newRank), 1500);
+        }
+      } else {
+        RankSystem.recordLoss();
+      }
+    }
+
+    // Victory celebration
+    if (typeof VictoryCelebration !== 'undefined') {
+      VictoryCelebration.play(playerIndex, scoreResult, isTsumo, null);
     }
 
     // Character friendship
@@ -3469,6 +3523,12 @@ const Game = (() => {
     if (typeof Skills !== 'undefined') Skills.removeSkillButton();
     // Clean up any lingering action calligraphy elements
     document.querySelectorAll('.action-calligraphy').forEach(el => el.remove());
+    // Hide enhancement UI
+    const tileCounterBtn = document.getElementById('tile-counter-btn');
+    if (tileCounterBtn) tileCounterBtn.style.display = 'none';
+    if (typeof TileCounter !== 'undefined') TileCounter.hide();
+    if (typeof ShantenDisplay !== 'undefined') ShantenDisplay.hide();
+    if (typeof HintSystem !== 'undefined') HintSystem.clearHintHighlight();
     state = null;
     multiRound = null;
     rules = null;

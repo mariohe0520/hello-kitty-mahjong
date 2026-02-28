@@ -73,181 +73,375 @@ const Game = (() => {
 
     function isMuted() { return muted; }
 
-    // ─── Tile tap: bamboo click ───
+    // ─── Tile tap: crisp ceramic click (selecting a tile) ───
     function playTap() {
       const c = getCtx(); const m = getMaster();
+      const t = c.currentTime;
+
+      // Sharp transient click — like tapping a ceramic tile on a table edge
+      const clickBuf = c.createBuffer(1, Math.floor(c.sampleRate * 0.025), c.sampleRate);
+      const clickData = clickBuf.getChannelData(0);
+      for (let i = 0; i < clickData.length; i++) {
+        const env = Math.exp(-i / (clickData.length * 0.08));
+        // Mix of noise + high-freq sine for the "tink" quality
+        clickData[i] = ((Math.random() * 2 - 1) * 0.6 + Math.sin(i * 0.35) * 0.4) * env;
+      }
+      const clickSrc = c.createBufferSource();
+      clickSrc.buffer = clickBuf;
+      const clickFilter = c.createBiquadFilter();
+      clickFilter.type = 'highpass';
+      clickFilter.frequency.value = 2500;
+      clickFilter.Q.value = 1.5;
+      const clickGain = c.createGain();
+      clickGain.gain.setValueAtTime(0.35, t);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.025);
+      clickSrc.connect(clickFilter);
+      clickFilter.connect(clickGain);
+      clickGain.connect(m);
+      clickSrc.start(t);
+
+      // Subtle resonant ping — ceramic resonance
       const osc = c.createOscillator();
-      const gain = c.createGain();
-      const filter = c.createBiquadFilter();
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(1000 + Math.random() * 200, c.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(600, c.currentTime + 0.04);
-      filter.type = 'highpass';
-      filter.frequency.value = 800;
-      gain.gain.setValueAtTime(0.3, c.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.08);
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(m);
-      osc.start(c.currentTime);
-      osc.stop(c.currentTime + 0.08);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(3200 + Math.random() * 400, t);
+      osc.frequency.exponentialRampToValueAtTime(2000, t + 0.04);
+      const oscGain = c.createGain();
+      oscGain.gain.setValueAtTime(0.08, t);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+      osc.connect(oscGain);
+      oscGain.connect(m);
+      osc.start(t);
+      osc.stop(t + 0.05);
     }
 
-    // ─── Tile place: deep thud ───
+    // ─── Tile place/discard: realistic tile-on-table slam ───
     function playPlace() {
       const c = getCtx(); const m = getMaster();
-      // Body thud
-      const osc1 = c.createOscillator();
-      const gain1 = c.createGain();
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(400, c.currentTime);
-      osc1.frequency.exponentialRampToValueAtTime(150, c.currentTime + 0.1);
-      gain1.gain.setValueAtTime(0.35, c.currentTime);
-      gain1.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.15);
-      osc1.connect(gain1);
-      gain1.connect(m);
-      osc1.start(c.currentTime);
-      osc1.stop(c.currentTime + 0.15);
+      const t = c.currentTime;
 
-      // Impact noise
-      const buf = c.createBuffer(1, c.sampleRate * 0.05, c.sampleRate);
-      const data = buf.getChannelData(0);
-      for (let i = 0; i < data.length; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.15));
+      // Layer 1: Low-frequency body thump (tile mass hitting table felt)
+      const thumpBuf = c.createBuffer(1, Math.floor(c.sampleRate * 0.08), c.sampleRate);
+      const thumpData = thumpBuf.getChannelData(0);
+      for (let i = 0; i < thumpData.length; i++) {
+        const phase = i / c.sampleRate;
+        const env = Math.exp(-phase * 50);
+        thumpData[i] = Math.sin(phase * 2 * Math.PI * 180) * env * 0.8
+                      + Math.sin(phase * 2 * Math.PI * 90) * env * 0.4;
       }
-      const noise = c.createBufferSource();
-      noise.buffer = buf;
-      const nGain = c.createGain();
-      nGain.gain.setValueAtTime(0.15, c.currentTime);
-      nGain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.06);
-      const nFilter = c.createBiquadFilter();
-      nFilter.type = 'lowpass';
-      nFilter.frequency.value = 2000;
-      noise.connect(nFilter);
-      nFilter.connect(nGain);
-      nGain.connect(m);
-      noise.start(c.currentTime);
+      const thumpSrc = c.createBufferSource();
+      thumpSrc.buffer = thumpBuf;
+      const thumpGain = c.createGain();
+      thumpGain.gain.setValueAtTime(0.4, t);
+      thumpGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+      thumpSrc.connect(thumpGain);
+      thumpGain.connect(m);
+      thumpSrc.start(t);
+
+      // Layer 2: High-frequency crack/click (hard tile surface impact)
+      const crackBuf = c.createBuffer(1, Math.floor(c.sampleRate * 0.015), c.sampleRate);
+      const crackData = crackBuf.getChannelData(0);
+      for (let i = 0; i < crackData.length; i++) {
+        const env = Math.exp(-i / (crackData.length * 0.06));
+        crackData[i] = (Math.random() * 2 - 1) * env;
+      }
+      const crackSrc = c.createBufferSource();
+      crackSrc.buffer = crackBuf;
+      const crackFilter = c.createBiquadFilter();
+      crackFilter.type = 'highpass';
+      crackFilter.frequency.value = 3000;
+      crackFilter.Q.value = 0.8;
+      const crackGain = c.createGain();
+      crackGain.gain.setValueAtTime(0.3, t);
+      crackGain.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
+      crackSrc.connect(crackFilter);
+      crackFilter.connect(crackGain);
+      crackGain.connect(m);
+      crackSrc.start(t);
+
+      // Layer 3: Mid resonance (table surface vibration)
+      const osc = c.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(350 + Math.random() * 60, t);
+      osc.frequency.exponentialRampToValueAtTime(120, t + 0.12);
+      const oscGain = c.createGain();
+      oscGain.gain.setValueAtTime(0.15, t);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      osc.connect(oscGain);
+      oscGain.connect(m);
+      osc.start(t);
+      osc.stop(t + 0.12);
     }
 
-    // ─── Peng: double click ───
+    // ─── Peng: decisive double-tile slam (two tiles slapped on table) ───
     function playPeng() {
       const c = getCtx(); const m = getMaster();
-      [0, 0.1].forEach(offset => {
-        const osc = c.createOscillator();
-        const gain = c.createGain();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(900, c.currentTime + offset);
-        osc.frequency.exponentialRampToValueAtTime(500, c.currentTime + offset + 0.05);
-        gain.gain.setValueAtTime(0.3, c.currentTime + offset);
-        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + offset + 0.1);
-        osc.connect(gain);
-        gain.connect(m);
-        osc.start(c.currentTime + offset);
-        osc.stop(c.currentTime + offset + 0.1);
-      });
-    }
+      const t = c.currentTime;
 
-    // ─── Gang: deep resonance ───
-    function playGang() {
-      const c = getCtx(); const m = getMaster();
-      const freqs = [150, 200, 300];
-      freqs.forEach((f, i) => {
-        const osc = c.createOscillator();
-        const gain = c.createGain();
-        osc.type = i === 0 ? 'sine' : 'triangle';
-        osc.frequency.setValueAtTime(f, c.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(f * 0.5, c.currentTime + 0.4);
-        gain.gain.setValueAtTime(0.25, c.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.4);
-        osc.connect(gain);
-        gain.connect(m);
-        osc.start(c.currentTime);
-        osc.stop(c.currentTime + 0.4);
-      });
-    }
-
-    // ─── Hu: rising chord + shimmer ───
-    function playHu() {
-      const c = getCtx(); const m = getMaster();
-      const notes = [261.6, 329.6, 392.0, 523.3]; // C4-E4-G4-C5
-      notes.forEach((f, i) => {
-        const osc = c.createOscillator();
-        const gain = c.createGain();
-        osc.type = 'sine';
-        const start = c.currentTime + i * 0.12;
-        osc.frequency.setValueAtTime(f, start);
-        gain.gain.setValueAtTime(0, start);
-        gain.gain.linearRampToValueAtTime(0.2, start + 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.8);
-        osc.connect(gain);
-        gain.connect(m);
-        osc.start(start);
-        osc.stop(start + 0.8);
-      });
-
-      // Shimmer: high frequency noise burst
-      setTimeout(() => {
-        const c2 = getCtx();
-        const buf = c2.createBuffer(1, c2.sampleRate * 0.3, c2.sampleRate);
+      // Two sharp tile impacts in quick succession
+      [0, 0.08].forEach(offset => {
+        // Hard ceramic click
+        const buf = c.createBuffer(1, Math.floor(c.sampleRate * 0.04), c.sampleRate);
         const data = buf.getChannelData(0);
         for (let i = 0; i < data.length; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.3)) * 0.3;
+          const phase = i / c.sampleRate;
+          const env = Math.exp(-phase * 80);
+          data[i] = ((Math.random() * 2 - 1) * 0.5 +
+                     Math.sin(phase * 2 * Math.PI * 2800) * 0.3 +
+                     Math.sin(phase * 2 * Math.PI * 180) * 0.5) * env;
         }
-        const noise = c2.createBufferSource();
-        noise.buffer = buf;
-        const filter = c2.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.value = 6000;
-        filter.Q.value = 2;
-        const nGain = c2.createGain();
-        nGain.gain.setValueAtTime(0.08, c2.currentTime);
-        nGain.gain.exponentialRampToValueAtTime(0.001, c2.currentTime + 0.3);
-        noise.connect(filter);
-        filter.connect(nGain);
-        nGain.connect(getMaster());
-        noise.start(c2.currentTime);
-      }, 400);
+        const src = c.createBufferSource();
+        src.buffer = buf;
+        const gain = c.createGain();
+        gain.gain.setValueAtTime(0.4, t + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + offset + 0.05);
+        src.connect(gain);
+        gain.connect(m);
+        src.start(t + offset);
+      });
+
+      // Satisfying table resonance after the double slam
+      const osc = c.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(250, t + 0.08);
+      osc.frequency.exponentialRampToValueAtTime(100, t + 0.25);
+      const oscGain = c.createGain();
+      oscGain.gain.setValueAtTime(0.12, t + 0.08);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+      osc.connect(oscGain);
+      oscGain.connect(m);
+      osc.start(t + 0.08);
+      osc.stop(t + 0.25);
     }
 
-    // ─── Draw: soft slide ───
+    // ─── Gang: heavy quad-tile slam with deep resonance ───
+    function playGang() {
+      const c = getCtx(); const m = getMaster();
+      const t = c.currentTime;
+
+      // Four rapid tile impacts
+      [0, 0.05, 0.1, 0.14].forEach((offset, idx) => {
+        const buf = c.createBuffer(1, Math.floor(c.sampleRate * 0.03), c.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+          const phase = i / c.sampleRate;
+          const env = Math.exp(-phase * 100);
+          data[i] = ((Math.random() * 2 - 1) * 0.6 +
+                     Math.sin(phase * 2 * Math.PI * (2500 + idx * 200)) * 0.3) * env;
+        }
+        const src = c.createBufferSource();
+        src.buffer = buf;
+        const gain = c.createGain();
+        const vol = 0.25 + idx * 0.05; // Crescendo effect
+        gain.gain.setValueAtTime(vol, t + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + offset + 0.04);
+        src.connect(gain);
+        gain.connect(m);
+        src.start(t + offset);
+      });
+
+      // Deep bass thump for the combined weight
+      const osc1 = c.createOscillator();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(120, t + 0.14);
+      osc1.frequency.exponentialRampToValueAtTime(50, t + 0.5);
+      const osc1Gain = c.createGain();
+      osc1Gain.gain.setValueAtTime(0.3, t + 0.14);
+      osc1Gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+      osc1.connect(osc1Gain);
+      osc1Gain.connect(m);
+      osc1.start(t + 0.14);
+      osc1.stop(t + 0.5);
+
+      // Table vibration buzz
+      const buzzBuf = c.createBuffer(1, Math.floor(c.sampleRate * 0.2), c.sampleRate);
+      const buzzData = buzzBuf.getChannelData(0);
+      for (let i = 0; i < buzzData.length; i++) {
+        const phase = i / c.sampleRate;
+        buzzData[i] = (Math.random() * 2 - 1) * Math.exp(-phase * 15) * 0.1;
+      }
+      const buzzSrc = c.createBufferSource();
+      buzzSrc.buffer = buzzBuf;
+      const buzzFilter = c.createBiquadFilter();
+      buzzFilter.type = 'lowpass';
+      buzzFilter.frequency.value = 400;
+      const buzzGain = c.createGain();
+      buzzGain.gain.setValueAtTime(0.15, t + 0.14);
+      buzzGain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+      buzzSrc.connect(buzzFilter);
+      buzzFilter.connect(buzzGain);
+      buzzGain.connect(m);
+      buzzSrc.start(t + 0.14);
+    }
+
+    // ─── Hu: triumphant tile reveal + celebratory chime ───
+    function playHu() {
+      const c = getCtx(); const m = getMaster();
+      const t = c.currentTime;
+
+      // Dramatic tile slam first
+      const slamBuf = c.createBuffer(1, Math.floor(c.sampleRate * 0.06), c.sampleRate);
+      const slamData = slamBuf.getChannelData(0);
+      for (let i = 0; i < slamData.length; i++) {
+        const phase = i / c.sampleRate;
+        const env = Math.exp(-phase * 60);
+        slamData[i] = ((Math.random() * 2 - 1) * 0.4 +
+                       Math.sin(phase * 2 * Math.PI * 250) * 0.6) * env;
+      }
+      const slamSrc = c.createBufferSource();
+      slamSrc.buffer = slamBuf;
+      const slamGain = c.createGain();
+      slamGain.gain.setValueAtTime(0.35, t);
+      slamGain.gain.exponentialRampToValueAtTime(0.01, t + 0.06);
+      slamSrc.connect(slamGain);
+      slamGain.connect(m);
+      slamSrc.start(t);
+
+      // Rising pentatonic celebration (Chinese pentatonic: C D E G A)
+      const notes = [523.3, 587.3, 659.3, 784.0, 880.0, 1046.5]; // C5 D5 E5 G5 A5 C6
+      notes.forEach((f, i) => {
+        const osc = c.createOscillator();
+        osc.type = 'sine';
+        const start = t + 0.1 + i * 0.08;
+        osc.frequency.setValueAtTime(f, start);
+        const oscGain = c.createGain();
+        oscGain.gain.setValueAtTime(0, start);
+        oscGain.gain.linearRampToValueAtTime(0.15, start + 0.02);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, start + 0.6);
+        osc.connect(oscGain);
+        oscGain.connect(m);
+        osc.start(start);
+        osc.stop(start + 0.6);
+
+        // Add harmonics for richness
+        const osc2 = c.createOscillator();
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(f * 2, start);
+        const osc2Gain = c.createGain();
+        osc2Gain.gain.setValueAtTime(0, start);
+        osc2Gain.gain.linearRampToValueAtTime(0.04, start + 0.02);
+        osc2Gain.gain.exponentialRampToValueAtTime(0.001, start + 0.4);
+        osc2.connect(osc2Gain);
+        osc2Gain.connect(m);
+        osc2.start(start);
+        osc2.stop(start + 0.4);
+      });
+
+      // Shimmering tail — metallic gong-like wash
+      setTimeout(() => {
+        const c2 = getCtx();
+        const t2 = c2.currentTime;
+        const shimBuf = c2.createBuffer(2, Math.floor(c2.sampleRate * 0.8), c2.sampleRate);
+        for (let ch = 0; ch < 2; ch++) {
+          const shimData = shimBuf.getChannelData(ch);
+          for (let i = 0; i < shimData.length; i++) {
+            const phase = i / c2.sampleRate;
+            const env = Math.exp(-phase * 3);
+            shimData[i] = (
+              Math.sin(phase * 2 * Math.PI * 4186) * 0.05 +
+              Math.sin(phase * 2 * Math.PI * 5274) * 0.03 +
+              (Math.random() * 2 - 1) * 0.02
+            ) * env;
+          }
+        }
+        const shimSrc = c2.createBufferSource();
+        shimSrc.buffer = shimBuf;
+        const shimGain = c2.createGain();
+        shimGain.gain.setValueAtTime(0.12, t2);
+        shimGain.gain.exponentialRampToValueAtTime(0.001, t2 + 0.8);
+        shimSrc.connect(shimGain);
+        shimGain.connect(getMaster());
+        shimSrc.start(t2);
+      }, 500);
+    }
+
+    // ─── Draw: tile sliding off wall (scraping ceramic) ───
     function playDraw() {
       const c = getCtx(); const m = getMaster();
-      const buf = c.createBuffer(1, c.sampleRate * 0.15, c.sampleRate);
-      const data = buf.getChannelData(0);
-      for (let i = 0; i < data.length; i++) {
-        const t = i / c.sampleRate;
-        data[i] = (Math.random() * 2 - 1) * 0.15 * Math.sin(t * 800) * Math.exp(-t * 20);
+      const t = c.currentTime;
+      const duration = 0.12;
+
+      // Sliding friction noise (tile dragged across other tiles)
+      const slideBuf = c.createBuffer(1, Math.floor(c.sampleRate * duration), c.sampleRate);
+      const slideData = slideBuf.getChannelData(0);
+      for (let i = 0; i < slideData.length; i++) {
+        const phase = i / c.sampleRate;
+        // Ramp up then down for a slide feel
+        const env = Math.sin(phase / duration * Math.PI) * Math.exp(-phase * 8);
+        slideData[i] = (Math.random() * 2 - 1) * env;
       }
-      const noise = c.createBufferSource();
-      noise.buffer = buf;
-      const filter = c.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(2000, c.currentTime);
-      filter.frequency.linearRampToValueAtTime(800, c.currentTime + 0.15);
-      filter.Q.value = 1;
-      const gain = c.createGain();
-      gain.gain.setValueAtTime(0.2, c.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.15);
-      noise.connect(filter);
-      filter.connect(gain);
-      gain.connect(m);
-      noise.start(c.currentTime);
+      const slideSrc = c.createBufferSource();
+      slideSrc.buffer = slideBuf;
+      const slideFilter = c.createBiquadFilter();
+      slideFilter.type = 'bandpass';
+      slideFilter.frequency.setValueAtTime(3500, t);
+      slideFilter.frequency.linearRampToValueAtTime(1500, t + duration);
+      slideFilter.Q.value = 1.2;
+      const slideGain = c.createGain();
+      slideGain.gain.setValueAtTime(0.18, t);
+      slideGain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+      slideSrc.connect(slideFilter);
+      slideFilter.connect(slideGain);
+      slideGain.connect(m);
+      slideSrc.start(t);
+
+      // Subtle click as tile lifts off
+      const clickBuf = c.createBuffer(1, Math.floor(c.sampleRate * 0.01), c.sampleRate);
+      const clickData = clickBuf.getChannelData(0);
+      for (let i = 0; i < clickData.length; i++) {
+        clickData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (clickData.length * 0.1));
+      }
+      const clickSrc = c.createBufferSource();
+      clickSrc.buffer = clickBuf;
+      const clickFilter = c.createBiquadFilter();
+      clickFilter.type = 'highpass';
+      clickFilter.frequency.value = 4000;
+      const clickGain = c.createGain();
+      clickGain.gain.setValueAtTime(0.12, t + duration * 0.7);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, t + duration * 0.7 + 0.015);
+      clickSrc.connect(clickFilter);
+      clickFilter.connect(clickGain);
+      clickGain.connect(m);
+      clickSrc.start(t + duration * 0.7);
     }
 
-    // ─── Chi: light tap ───
+    // ─── Chi: quick tile arrangement click (sorting tiles into sequence) ───
     function playChi() {
       const c = getCtx(); const m = getMaster();
+      const t = c.currentTime;
+
+      // Three light clicks in ascending pitch (arranging the sequence)
+      [0, 0.06, 0.12].forEach((offset, idx) => {
+        const buf = c.createBuffer(1, Math.floor(c.sampleRate * 0.02), c.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+          const phase = i / c.sampleRate;
+          const freq = 3000 + idx * 600; // Ascending pitch
+          const env = Math.exp(-phase * 120);
+          data[i] = (Math.sin(phase * 2 * Math.PI * freq) * 0.4 +
+                     (Math.random() * 2 - 1) * 0.3) * env;
+        }
+        const src = c.createBufferSource();
+        src.buffer = buf;
+        const gain = c.createGain();
+        gain.gain.setValueAtTime(0.2, t + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + offset + 0.03);
+        src.connect(gain);
+        gain.connect(m);
+        src.start(t + offset);
+      });
+
+      // Soft table tap at end
       const osc = c.createOscillator();
-      const gain = c.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(1200, c.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(800, c.currentTime + 0.06);
-      gain.gain.setValueAtTime(0.25, c.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.12);
-      osc.connect(gain);
-      gain.connect(m);
-      osc.start(c.currentTime);
-      osc.stop(c.currentTime + 0.12);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(300, t + 0.15);
+      osc.frequency.exponentialRampToValueAtTime(100, t + 0.22);
+      const oscGain = c.createGain();
+      oscGain.gain.setValueAtTime(0.08, t + 0.15);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+      osc.connect(oscGain);
+      oscGain.connect(m);
+      osc.start(t + 0.15);
+      osc.stop(t + 0.22);
     }
 
     return {
@@ -386,6 +580,12 @@ const Game = (() => {
       if (rafId) {
         cancelAnimationFrame(rafId);
         rafId = null;
+      }
+      // Return all active particles to the pool
+      while (active.length > 0) {
+        const p = active.pop();
+        p.el.style.display = 'none';
+        pool.push(p.el);
       }
     }
 
@@ -807,7 +1007,8 @@ const Game = (() => {
     return {
       mode,
       deck,
-      wall: [...deck], // tiles to draw from
+      wall: [...deck],
+      wallInitialLength: deck.length,
       drawIndex: 0,
       players: [
         { hand: [], melds: [], discards: [], score: scores[0], isHuman: true, name: '我', avatar: '🎀', personality: null, charId: null, removedSuit: null, hasWon: false, pengCount: 0, chiCount: 0, gangCount: 0 },
@@ -897,6 +1098,13 @@ const Game = (() => {
     if (dustInterval) clearInterval(dustInterval);
     dustInterval = setInterval(() => Particles.dustMotes(), 2000);
 
+    // Reset hint system for new game
+    if (typeof HintSystem !== 'undefined') HintSystem.reset();
+
+    // Show tile counter button
+    const tileCounterBtn = document.getElementById('tile-counter-btn');
+    if (tileCounterBtn) tileCounterBtn.style.display = 'flex';
+
     // Show character dialogue on game start
     if (typeof Characters !== 'undefined') {
       for (let i = 1; i < 4; i++) {
@@ -932,6 +1140,10 @@ const Game = (() => {
     // Hide tenpai indicator
     const tenpaiEl = document.getElementById('tenpai-indicator');
     if (tenpaiEl) tenpaiEl.style.display = 'none';
+    // Hide shanten badge
+    if (typeof ShantenDisplay !== 'undefined') ShantenDisplay.hide();
+    // Hide hint reasoning
+    if (typeof HintSystem !== 'undefined') HintSystem.clearHintHighlight();
     hideActionBar();
   }
 
@@ -1156,23 +1368,26 @@ const Game = (() => {
   // ─── Tile interaction (tap to select, tap again to discard) ───
   function setupTileInteraction(el, tile, playerIndex) {
     let tapHandled = false;
+    let usedTouch = false;
 
     function handleTap(e) {
-      e.preventDefault();
+      if (e.type === 'touchend') {
+        usedTouch = true;
+        e.preventDefault();
+      }
+      if (e.type === 'click' && usedTouch) return;
       e.stopPropagation();
       if (tapHandled) return;
       tapHandled = true;
-      setTimeout(() => tapHandled = false, 200);
+      setTimeout(() => tapHandled = false, 300);
 
       if (state.turnPhase !== 'discard' || state.currentPlayer !== playerIndex) return;
       if (state.gameOver) return;
 
-      // Sichuan: if player still has removed suit tiles, must discard those
       if (state.mode === 'sichuan' && state.players[0].removedSuit) {
         const removedSuit = state.players[0].removedSuit;
         const hasRemoved = state.players[0].hand.some(t => t.suit === removedSuit);
         if (hasRemoved && tile.suit !== removedSuit) {
-          // Flash the removed suit tiles
           shakeElement(el);
           return;
         }
@@ -1181,10 +1396,8 @@ const Game = (() => {
       Sound.playTap();
 
       if (state.selectedTile?.id === tile.id) {
-        // Second tap — confirm discard
         discardTile(playerIndex, tile);
       } else {
-        // First tap — select
         state.selectedTile = tile;
         renderHand(playerIndex);
       }
@@ -1290,7 +1503,14 @@ const Game = (() => {
     await renderHand(playerIndex);
 
     // Update tenpai indicator after discard (hand is now 13 tiles)
-    if (playerIndex === 0) updateTenpaiIndicator(0);
+    if (playerIndex === 0) {
+      updateTenpaiIndicator(0);
+      // Clear hint highlight when player makes a discard
+      if (typeof HintSystem !== 'undefined') HintSystem.clearHintHighlight();
+      // Hide hint button after discard (it was from this turn's draw)
+      const hintBtnEl = document.getElementById('hint-btn');
+      if (hintBtnEl) hintBtnEl.style.display = 'none';
+    }
 
     // Check other players for reactions (hu/gang/peng/chi)
     await checkReactions(playerIndex, tile);
@@ -1302,21 +1522,32 @@ const Game = (() => {
     const river = document.getElementById(riverId);
     if (!river) return;
 
-    // Remove last-discard highlight from all previous tiles
+    // Remove last-discard highlight from ALL rivers' tiles
     document.querySelectorAll('.discard-river .tile.last-discard').forEach(el => {
       el.classList.remove('last-discard');
     });
 
     const tileEl = renderTile(tile, { small: true, mini: true, faceDown: false });
     tileEl.classList.add('last-discard');
+
+    // Add tooltip showing tile name
+    tileEl.title = tile.name || tile.display || '';
+
     tileEl.style.opacity = '0';
-    tileEl.style.transform = 'scale(1.3)';
+    tileEl.style.transform = 'scale(1.5)';
     river.appendChild(tileEl);
 
+    // Animate in with a satisfying pop
     requestAnimationFrame(() => {
-      tileEl.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      tileEl.style.transition = 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
       tileEl.style.opacity = '1';
       tileEl.style.transform = 'scale(1)';
+    });
+
+    // Auto-scroll the river to show the latest tile
+    requestAnimationFrame(() => {
+      river.scrollLeft = river.scrollWidth;
+      river.scrollTop = river.scrollHeight;
     });
   }
 
@@ -1403,8 +1634,9 @@ const Game = (() => {
 
   // ─── Update remaining tiles display ───
   function updateRemainingTiles() {
+    if (!state || !state.wall) return;
     const remaining = state.wall.length - state.drawIndex;
-    const total = state.wall.length;
+    const total = state.wallInitialLength || state.wall.length;
     const el = document.getElementById('tiles-remaining');
     if (el) el.textContent = remaining;
 
@@ -1454,6 +1686,7 @@ const Game = (() => {
     state.currentPlayer = playerIndex;
     state.turnPhase = 'draw';
     state.selectedTile = null;
+    state.lastDrawnTile = null; // Clear stale drawn tile reference
     state.turnCount++;
 
     // Update turn indicator
@@ -1478,21 +1711,21 @@ const Game = (() => {
 
     const player = state.players[playerIndex];
 
-    // Check for tsumo (self-draw win)
-    // Hand already includes drawn tile (14 tiles), so check the full hand directly
-    const huResult = rules.checkWin(player.hand, player.melds);
+    const rawHuResult = rules.checkWin(player.hand, player.melds);
+    const huResult = rawHuResult && canPlayerHu(playerIndex, player.hand, player.melds) ? rawHuResult : null;
 
     if (player.isHuman) {
-      // Render hand with new tile
       renderHand(playerIndex, false);
 
-      // Show skill buttons
       if (typeof Skills !== 'undefined') Skills.renderSkillButton();
 
-      // Update tenpai indicator (will show when hand goes back to 13 after discard)
       updateTenpaiIndicator(0);
 
-      // Check for auto-win / an gang / jia gang
+      // Update shanten display
+      if (typeof ShantenDisplay !== 'undefined') {
+        ShantenDisplay.update(player.hand, player.melds);
+      }
+
       if (huResult) {
         showActionBar(['hu']);
       }
@@ -1513,6 +1746,12 @@ const Game = (() => {
       }
 
       state.turnPhase = 'discard';
+      // Show hint button during discard phase
+      const hintBtn = document.getElementById('hint-btn');
+      if (hintBtn && typeof HintSystem !== 'undefined' && HintSystem.hintsLeft > 0) {
+        hintBtn.style.display = 'flex';
+        HintSystem.updateHintButton();
+      }
     } else {
       // AI turn
       handleAITurn(playerIndex, drawn, huResult);
@@ -1585,9 +1824,8 @@ const Game = (() => {
       const player = state.players[pIdx];
       if (player.hasWon) continue;
 
-      // Check hu
       const huResult = rules.checkCanHu(player.hand, tile, player.melds);
-      if (huResult) {
+      if (huResult && canPlayerHu(pIdx, [...player.hand, tile], player.melds)) {
         reactions.push({ playerIndex: pIdx, action: 'hu', priority: 4 });
       }
 
@@ -1634,8 +1872,15 @@ const Game = (() => {
       return;
     }
 
-    // All AI reactions
+    // Collect all AI decisions first, then process by priority
+    const actionPriority = { hu: 4, gang: 3, peng: 2, chi: 1, pass: 0 };
+    const aiDecisions = [];
+    const checkedPlayers = new Set();
+
     for (const reaction of aiReactions) {
+      if (checkedPlayers.has(reaction.playerIndex)) continue;
+      checkedPlayers.add(reaction.playerIndex);
+
       const player = state.players[reaction.playerIndex];
       const gameState = {
         discardPile: state.discardPile,
@@ -1652,17 +1897,27 @@ const Game = (() => {
         removedSuit: player.removedSuit,
       }, tile, discardPlayerIndex, gameState);
 
+      if (decision.action !== 'pass') {
+        aiDecisions.push({ playerIndex: reaction.playerIndex, decision });
+      }
+    }
+
+    aiDecisions.sort((a, b) =>
+      (actionPriority[b.decision.action] || 0) - (actionPriority[a.decision.action] || 0)
+    );
+
+    for (const { playerIndex: pIdx, decision } of aiDecisions) {
       if (decision.action === 'hu') {
-        await handleHu(reaction.playerIndex, tile, false);
+        await handleHu(pIdx, tile, false);
         return;
       } else if (decision.action === 'gang') {
-        await handleMingGang(reaction.playerIndex, tile, discardPlayerIndex);
+        await handleMingGang(pIdx, tile, discardPlayerIndex);
         return;
       } else if (decision.action === 'peng') {
-        await handlePeng(reaction.playerIndex, tile, discardPlayerIndex);
+        await handlePeng(pIdx, tile, discardPlayerIndex);
         return;
       } else if (decision.action === 'chi') {
-        await handleChi(reaction.playerIndex, tile, decision.option, discardPlayerIndex);
+        await handleChi(pIdx, tile, decision.option, discardPlayerIndex);
         return;
       }
     }
@@ -1738,6 +1993,10 @@ const Game = (() => {
     if (!bar) return;
     bar.style.display = 'flex';
 
+    // Remove any existing tile preview
+    const existingPreview = bar.querySelector('.action-tile-preview');
+    if (existingPreview) existingPreview.remove();
+
     const btnMap = {
       chi: '.btn-chi',
       peng: '.btn-peng',
@@ -1752,7 +2011,42 @@ const Game = (() => {
       if (btn) btn.style.display = 'none';
     });
 
-    // Show requested
+    // Show tile preview when reacting to a discard (chi/peng/gang/hu on opponent's discard)
+    const isReaction = actions.some(a => ['chi', 'peng', 'gang', 'hu'].includes(a));
+    const tile = state.lastDiscard;
+    const fromPlayer = state.lastDiscardPlayer;
+
+    if (isReaction && tile && fromPlayer >= 0 && fromPlayer !== 0) {
+      const preview = document.createElement('div');
+      preview.className = 'action-tile-preview';
+
+      const player = state.players[fromPlayer];
+      const tileEl = renderTile(tile, { faceDown: false });
+      // Remove click handlers from preview tile
+      tileEl.style.cursor = 'default';
+      tileEl.style.pointerEvents = 'none';
+
+      const label = document.createElement('span');
+      label.className = 'preview-label';
+      label.textContent = '打出:';
+
+      const fromEl = document.createElement('span');
+      fromEl.className = 'preview-from';
+      fromEl.innerHTML = `<span class="preview-avatar">${player.avatar}</span> ${player.name}`;
+
+      const container = document.createElement('div');
+      container.className = 'preview-tile-container';
+      container.appendChild(tileEl);
+
+      preview.appendChild(label);
+      preview.appendChild(container);
+      preview.appendChild(fromEl);
+
+      // Insert preview at the beginning of action bar
+      bar.insertBefore(preview, bar.firstChild);
+    }
+
+    // Show requested buttons
     for (const action of actions) {
       const btn = bar.querySelector(btnMap[action]);
       if (btn) {
@@ -1763,6 +2057,10 @@ const Game = (() => {
         btn.style.animation = 'pulse 1s ease-in-out infinite';
       }
     }
+
+    // Hide standalone hint button when action bar appears (reactions)
+    const hintBtnStandalone = document.getElementById('hint-btn');
+    if (hintBtnStandalone) hintBtnStandalone.style.display = 'none';
 
     // Slide up animation
     bar.style.transform = 'translateY(100%)';
@@ -1779,7 +2077,13 @@ const Game = (() => {
       bar.querySelectorAll('.action-btn').forEach(btn => {
         btn.style.animation = '';
       });
+      // Remove tile preview
+      const preview = bar.querySelector('.action-tile-preview');
+      if (preview) preview.remove();
     }
+    // Hide standalone hint button too
+    const hintBtnStandalone = document.getElementById('hint-btn');
+    if (hintBtnStandalone) hintBtnStandalone.style.display = 'none';
   }
 
   // ─── Show full-screen calligraphy action text ───
@@ -1930,6 +2234,7 @@ const Game = (() => {
     showActionText('杠！', '#9b59b6');
     Sound.playGang();
     Anim.screenShake(6, 400);
+    state.players[playerIndex].gangCount++;
     if (playerIndex === 0 && typeof Stats !== 'undefined') Stats.recordAction('gang');
     if (typeof Commentary !== 'undefined') Commentary.onAction('gang', playerIndex, state);
 
@@ -1956,8 +2261,8 @@ const Game = (() => {
     const replacement = drawTileFromEnd(playerIndex);
     if (!replacement) return;
 
-    // Check tsumo on replacement (hand already includes the replacement tile)
-    const huResult = rules.checkWin(player.hand, player.melds);
+    const rawMingGangHu = rules.checkWin(player.hand, player.melds);
+    const huResult = rawMingGangHu && canPlayerHu(playerIndex, player.hand, player.melds) ? rawMingGangHu : null;
 
     if (player.isHuman) {
       renderHand(playerIndex);
@@ -2000,6 +2305,9 @@ const Game = (() => {
     showActionText('杠！', '#9b59b6');
     Sound.playGang();
     Anim.screenShake(6, 400);
+    state.players[playerIndex].gangCount++;
+    if (playerIndex === 0 && typeof Stats !== 'undefined') Stats.recordAction('gang');
+    if (typeof Commentary !== 'undefined') Commentary.onAction('gang', playerIndex, state);
 
     const player = state.players[playerIndex];
     const gangTiles = [];
@@ -2020,26 +2328,39 @@ const Game = (() => {
     const replacement = drawTileFromEnd(playerIndex);
     if (!replacement) return;
 
+    const rawAnGangHu = rules.checkWin(player.hand, player.melds);
+    const huResult = rawAnGangHu && canPlayerHu(playerIndex, player.hand, player.melds) ? rawAnGangHu : null;
+
     if (player.isHuman) {
       renderHand(playerIndex);
-      state.currentPlayer = playerIndex;
-      state.turnPhase = 'discard';
+      if (huResult) {
+        showActionBar(['hu', 'pass']);
+        state.turnPhase = 'action';
+        state.currentPlayer = playerIndex;
+      } else {
+        state.currentPlayer = playerIndex;
+        state.turnPhase = 'discard';
+      }
     } else {
-      state.currentPlayer = playerIndex;
-      const gameState = {
-        discardPile: state.discardPile,
-        allMelds: state.players.flatMap(p => p.melds),
-        playerDiscards: state.players.map(p => p.discards),
-        rules,
-      };
-      const decision = await AI.takeTurn({
-        hand: player.hand,
-        melds: player.melds,
-        personality: player.personality,
-        playerIndex,
-        removedSuit: player.removedSuit,
-      }, gameState);
-      await discardTile(playerIndex, decision.tile);
+      if (huResult) {
+        await handleHu(playerIndex, replacement, true);
+      } else {
+        state.currentPlayer = playerIndex;
+        const gameState = {
+          discardPile: state.discardPile,
+          allMelds: state.players.flatMap(p => p.melds),
+          playerDiscards: state.players.map(p => p.discards),
+          rules,
+        };
+        const decision = await AI.takeTurn({
+          hand: player.hand,
+          melds: player.melds,
+          personality: player.personality,
+          playerIndex,
+          removedSuit: player.removedSuit,
+        }, gameState);
+        await discardTile(playerIndex, decision.tile);
+      }
     }
   }
 
@@ -2049,6 +2370,9 @@ const Game = (() => {
     showActionText('杠！', '#9b59b6');
     Sound.playGang();
     Anim.screenShake(6, 400);
+    state.players[playerIndex].gangCount++;
+    if (playerIndex === 0 && typeof Stats !== 'undefined') Stats.recordAction('gang');
+    if (typeof Commentary !== 'undefined') Commentary.onAction('gang', playerIndex, state);
 
     const player = state.players[playerIndex];
 
@@ -2068,7 +2392,7 @@ const Game = (() => {
         if (other.hasWon) continue;
 
         const huResult = rules.checkCanHu(other.hand, gangTile, other.melds);
-        if (huResult) {
+        if (huResult && canPlayerHu(pIdx, [...other.hand, gangTile], other.melds)) {
           if (other.isHuman) {
             // Show hu option to human player
             showActionBar(['hu', 'pass']);
@@ -2129,11 +2453,24 @@ const Game = (() => {
     const replacement = drawTileFromEnd(playerIndex);
     if (!replacement) return;
 
+    const rawJiaGangHu = rules.checkWin(player.hand, player.melds);
+    const jiaGangHuResult = rawJiaGangHu && canPlayerHu(playerIndex, player.hand, player.melds) ? rawJiaGangHu : null;
+
     if (player.isHuman) {
       renderHand(playerIndex);
-      state.currentPlayer = playerIndex;
-      state.turnPhase = 'discard';
+      if (jiaGangHuResult) {
+        showActionBar(['hu', 'pass']);
+        state.turnPhase = 'action';
+        state.currentPlayer = playerIndex;
+      } else {
+        state.currentPlayer = playerIndex;
+        state.turnPhase = 'discard';
+      }
     } else {
+      if (jiaGangHuResult) {
+        await handleHu(playerIndex, replacement, true);
+        return;
+      }
       state.currentPlayer = playerIndex;
       const gameState = {
         discardPile: state.discardPile,
@@ -2159,6 +2496,14 @@ const Game = (() => {
 
     const player = state.players[playerIndex];
 
+    // For ron (not tsumo), remove the winning tile from the discard river
+    if (!isTsumo) {
+      removeLastDiscard();
+      // Add the winning tile to the player's hand for display purposes
+      player.hand.push(winTile);
+      player.hand = TileUtils.sortHand(player.hand);
+    }
+
     // Epic celebration
     showActionText('胡！🎉', '#f5c518');
     Sound.playHu();
@@ -2182,17 +2527,15 @@ const Game = (() => {
     }
 
     // Calculate score
-    // For tsumo, hand already has 14 tiles; for ron, add the win tile
-    const handForScoring = isTsumo ? [...player.hand] : [...player.hand, winTile];
+    // Hand now has 14 tiles for both tsumo and ron (ron tile was added above)
+    const handForScoring = [...player.hand];
     const scoreResult = rules.calculateScore(
       handForScoring,
       player.melds,
       winTile,
       {
         isZimo: isTsumo,
-        // Pass seat wind for scoring bonus (FEATURE 3: wind rotation affects scoring)
         seatWind: getSeatWind(playerIndex),
-        seatWind: ['fe', 'fs', 'fw', 'fn'][playerIndex],
         roundWind: state.roundWind,
         removedSuit: player.removedSuit,
       }
@@ -2201,7 +2544,6 @@ const Game = (() => {
     // Update scores
     const points = scoreResult.baseScore;
     if (isTsumo) {
-      // Everyone pays
       for (let i = 0; i < 4; i++) {
         if (i !== playerIndex) {
           state.players[i].score -= points;
@@ -2209,10 +2551,9 @@ const Game = (() => {
       }
       player.score += points * 3;
     } else {
-      // Ron: the discarder pays double to balance with tsumo (3 players * 1x each)
-      const ronPayment = points * 2;
-      state.players[state.lastDiscardPlayer].score -= ronPayment;
-      player.score += ronPayment;
+      // Ron: only the discarder pays (not multiplied by 3)
+      state.players[state.lastDiscardPlayer].score -= points;
+      player.score += points;
     }
 
     player.hasWon = true;
@@ -2259,6 +2600,24 @@ const Game = (() => {
       } else {
         Stats.recordLoss();
       }
+    }
+
+    // Ranking system update
+    if (typeof RankSystem !== 'undefined') {
+      const totalFan = scoreResult.fans.reduce((s, f) => s + (f.fan || 0), 0);
+      if (playerIndex === 0) {
+        const result = RankSystem.recordWin(isTsumo, totalFan);
+        if (result.rankUp) {
+          setTimeout(() => RankSystem.showRankUpAnimation(result.newRank), 1500);
+        }
+      } else {
+        RankSystem.recordLoss();
+      }
+    }
+
+    // Victory celebration
+    if (typeof VictoryCelebration !== 'undefined') {
+      VictoryCelebration.play(playerIndex, scoreResult, isTsumo, null);
     }
 
     // Character friendship
@@ -2415,20 +2774,24 @@ const Game = (() => {
 
     // Update "next" button text for multi-round
     const nextBtn = document.getElementById('btn-next-hand');
-    if (nextBtn && multiRound) {
-      if (multiRound.handNumber >= multiRound.maxHands) {
-        nextBtn.textContent = '查看排名';
-      } else {
-        nextBtn.textContent = `下一手 (${multiRound.handNumber}/${multiRound.maxHands})`;
+    if (nextBtn) {
+      if (state._bloodWarContinue) {
+        nextBtn.textContent = '继续血战';
+      } else if (multiRound) {
+        if (multiRound.handNumber >= multiRound.maxHands) {
+          nextBtn.textContent = '查看排名';
+        } else {
+          nextBtn.textContent = `下一手 (${multiRound.handNumber}/${multiRound.maxHands})`;
+        }
       }
     }
 
-    // Check blood war
     if (state.mode === 'sichuan' && !SichuanRules.isBloodWarComplete(state.winners)) {
-      // Game continues
       state.gameOver = false;
+      state._bloodWarContinue = true;
     } else {
       state.gameOver = true;
+      state._bloodWarContinue = false;
     }
   }
 
@@ -2526,22 +2889,30 @@ const Game = (() => {
 
   // ─── Draw from end of wall (for gang replacement) ───
   function drawTileFromEnd(playerIndex) {
+    // Check that there are still tiles between drawIndex and end of wall
     if (state.drawIndex >= state.wall.length) {
       handleDrawGame();
       return null;
     }
-    // Take from the end
+    // Take from the end of the wall (for gang replacement draws)
     const tile = state.wall[state.wall.length - 1];
     state.wall.pop();
+    // After popping, re-check that wall is still valid
+    if (state.drawIndex > state.wall.length) {
+      // Wall fully consumed after pop
+      state.players[playerIndex].hand.push(tile);
+      state.players[playerIndex].hand = TileUtils.sortHand(state.players[playerIndex].hand);
+      updateRemainingTiles();
+      return tile;
+    }
     state.players[playerIndex].hand.push(tile);
     state.players[playerIndex].hand = TileUtils.sortHand(state.players[playerIndex].hand);
     updateRemainingTiles();
     return tile;
   }
 
-  // ─── Remove last discard from pool/river ───
+  // ─── Remove last discard from river (when claimed by chi/peng/gang) ───
   function removeLastDiscard() {
-    // Remove from the per-player river
     if (state.discardHistory.length > 0) {
       const lastEntry = state.discardHistory[state.discardHistory.length - 1];
       const riverId = `discard-river-${lastEntry.playerIndex}`;
@@ -2549,14 +2920,15 @@ const Game = (() => {
       if (river && river.lastChild) {
         river.lastChild.remove();
       }
+      const player = state.players[lastEntry.playerIndex];
+      if (player && player.discards.length > 0) {
+        player.discards.pop();
+      }
       state.discardHistory.pop();
     }
-    // Also remove from legacy pool
-    const pool = document.getElementById('discard-pool');
-    if (pool && pool.lastChild) {
-      pool.lastChild.remove();
+    if (state.discardPile.length > 0) {
+      state.discardPile.pop();
     }
-    state.discardPile.pop();
   }
 
   // ╔═══════════════════════════════════════════════════════════╗
@@ -2564,7 +2936,7 @@ const Game = (() => {
   // ╚═══════════════════════════════════════════════════════════╝
 
   function chi() {
-    if (state.turnPhase !== 'action') return;
+    if (!state || state.turnPhase !== 'action') return;
     const tile = state.lastDiscard;
     if (!tile) return;
 
@@ -2584,34 +2956,57 @@ const Game = (() => {
     overlay.className = 'queyimen-overlay';
     overlay.style.zIndex = '450';
 
-    const optionsHtml = options.map((opt, i) => {
+    // Build the panel
+    const panel = document.createElement('div');
+    panel.className = 'queyimen-panel';
+    panel.innerHTML = '<h3>选择吃牌组合</h3><p>选择要组成的顺子</p>';
+
+    const optionsContainer = document.createElement('div');
+    optionsContainer.className = 'queyimen-options';
+    optionsContainer.style.flexDirection = 'column';
+    optionsContainer.style.gap = '12px';
+
+    options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'queyimen-btn';
+      btn.dataset.idx = i;
+      btn.style.cssText = 'display:flex;align-items:center;gap:6px;padding:12px 16px;min-width:140px;justify-content:center;';
+
       const ranks = opt.sort((a, b) => a - b);
-      const display = ranks.map(r => `${r}${TILE_SUITS[tile.suit]?.name || ''}`).join(' ');
-      return `<button class="queyimen-btn" data-idx="${i}" style="font-size:16px;min-width:80px;">${display}</button>`;
-    }).join('');
+      ranks.forEach(r => {
+        // Find the tile key for this suit+rank
+        const suitPrefix = { wan: 'w', tiao: 't', tong: 'b' }[tile.suit] || '';
+        const tileKey = suitPrefix + r;
+        const tileData = TILES[tileKey];
+        if (tileData) {
+          const fakeTile = { ...tileData, key: tileKey, id: tileKey + '_chi_preview' };
+          const tileEl = renderTile(fakeTile, { faceDown: false, small: false });
+          tileEl.style.cssText = 'width:40px;height:52px;min-width:40px;min-height:52px;pointer-events:none;cursor:default;flex-shrink:0;';
+          // Highlight the discarded tile being consumed
+          if (r === tile.rank) {
+            tileEl.style.border = '2px solid #f5c518';
+            tileEl.style.boxShadow = '0 0 10px rgba(245,197,24,0.5)';
+          }
+          btn.appendChild(tileEl);
+        }
+      });
 
-    overlay.innerHTML = `
-      <div class="queyimen-panel">
-        <h3>选择吃牌组合</h3>
-        <p>选择要组成的顺子</p>
-        <div class="queyimen-options">${optionsHtml}</div>
-      </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    overlay.querySelectorAll('.queyimen-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const idx = parseInt(btn.dataset.idx);
         overlay.remove();
         Sound.playTap();
-        handleChi(0, tile, options[idx], state.lastDiscardPlayer);
+        handleChi(0, tile, options[i], state.lastDiscardPlayer);
       });
+
+      optionsContainer.appendChild(btn);
     });
+
+    panel.appendChild(optionsContainer);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
   }
 
   function peng() {
-    if (state.turnPhase !== 'action') return;
+    if (!state || state.turnPhase !== 'action') return;
     const tile = state.lastDiscard;
     if (!tile) return;
     if (!rules.canPeng(state.players[0].hand, tile)) return;
@@ -2619,7 +3014,7 @@ const Game = (() => {
   }
 
   function gang() {
-    if (state.turnPhase !== 'action') return;
+    if (!state || state.turnPhase !== 'action') return;
 
     const player = state.players[0];
     const tile = state.lastDiscard;
@@ -2646,7 +3041,7 @@ const Game = (() => {
   }
 
   function hu() {
-    if (state.turnPhase !== 'action') return;
+    if (!state || state.turnPhase !== 'action') return;
 
     const player = state.players[0];
 
@@ -2674,6 +3069,7 @@ const Game = (() => {
   }
 
   function pass() {
+    if (!state) return;
     hideActionBar();
     state.turnPhase = 'idle';
     state._pendingReactions = null;
@@ -2703,6 +3099,8 @@ const Game = (() => {
   async function checkRemainingAIReactions() {
     const tile = state.lastDiscard;
     const fromPlayer = state.lastDiscardPlayer;
+    const actionPriority = { hu: 4, gang: 3, peng: 2, chi: 1, pass: 0 };
+    const aiDecisions = [];
 
     for (let i = 1; i <= 3; i++) {
       const pIdx = (fromPlayer + i) % 4;
@@ -2724,6 +3122,16 @@ const Game = (() => {
         removedSuit: player.removedSuit,
       }, tile, fromPlayer, gameState);
 
+      if (decision.action !== 'pass') {
+        aiDecisions.push({ playerIndex: pIdx, decision });
+      }
+    }
+
+    aiDecisions.sort((a, b) =>
+      (actionPriority[b.decision.action] || 0) - (actionPriority[a.decision.action] || 0)
+    );
+
+    for (const { playerIndex: pIdx, decision } of aiDecisions) {
       if (decision.action === 'hu') {
         await handleHu(pIdx, tile, false);
         return;
@@ -2739,7 +3147,6 @@ const Game = (() => {
       }
     }
 
-    // All passed
     nextTurn(fromPlayer);
   }
 
@@ -2806,15 +3213,28 @@ const Game = (() => {
     }).join('');
   }
 
+  function continueBloodWar() {
+    const winModal = document.getElementById('win-screen');
+    if (winModal) winModal.style.display = 'none';
+    state._bloodWarContinue = false;
+    state.gameOver = false;
+    state.turnPhase = 'idle';
+    nextTurn(state.currentPlayer);
+  }
+
   function startNextHand() {
-    // Hide modals
+    if (state && state._bloodWarContinue) {
+      continueBloodWar();
+      return;
+    }
+
     const winModal = document.getElementById('win-screen');
     if (winModal) winModal.style.display = 'none';
     const scoreModal = document.getElementById('round-scoreboard');
     if (scoreModal) scoreModal.style.display = 'none';
 
     const canContinue = advanceMultiRound();
-    if (canContinue === false) return; // game over
+    if (canContinue === false) return;
 
     startGame(state.mode, { campaignLevel: state.campaignLevel, aiDifficulty: state.aiDifficulty });
   }
@@ -2942,7 +3362,8 @@ const Game = (() => {
       return;
     }
 
-    const level = typeof Campaign !== 'undefined' ? Campaign.getLevel(state.campaignLevel) : null;
+    const levelId = typeof state.campaignLevel === 'object' ? state.campaignLevel.id : state.campaignLevel;
+    const level = typeof Campaign !== 'undefined' ? Campaign.getLevel(levelId) : null;
     if (!level) {
       bar.style.display = 'none';
       return;
@@ -2961,7 +3382,9 @@ const Game = (() => {
   function verifyCampaignGoal(playerIndex, scoreResult, isTsumo) {
     if (!state.campaignLevel || typeof Campaign === 'undefined') return { met: false, stars: 1 };
 
-    const level = Campaign.getLevel(state.campaignLevel);
+    // state.campaignLevel may be the full level object or just an ID
+    const levelId = typeof state.campaignLevel === 'object' ? state.campaignLevel.id : state.campaignLevel;
+    const level = Campaign.getLevel(levelId);
     if (!level) return { met: false, stars: 1 };
 
     const player = state.players[playerIndex];
@@ -3072,6 +3495,16 @@ const Game = (() => {
   // ║  UTILITIES                                               ║
   // ╚═══════════════════════════════════════════════════════════╝
 
+  function canPlayerHu(playerIndex, hand, melds) {
+    if (state.mode === 'sichuan') {
+      const removedSuit = state.players[playerIndex].removedSuit;
+      if (removedSuit && typeof SichuanRules !== 'undefined') {
+        if (!SichuanRules.isQueYiMenSatisfied(hand, removedSuit)) return false;
+      }
+    }
+    return true;
+  }
+
   function wait(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
@@ -3082,11 +3515,23 @@ const Game = (() => {
 
   function destroy() {
     Particles.stop();
-    if (dustInterval) clearInterval(dustInterval);
+    if (dustInterval) {
+      clearInterval(dustInterval);
+      dustInterval = null;
+    }
     if (typeof Commentary !== 'undefined') Commentary.destroy();
     if (typeof Skills !== 'undefined') Skills.removeSkillButton();
+    // Clean up any lingering action calligraphy elements
+    document.querySelectorAll('.action-calligraphy').forEach(el => el.remove());
+    // Hide enhancement UI
+    const tileCounterBtn = document.getElementById('tile-counter-btn');
+    if (tileCounterBtn) tileCounterBtn.style.display = 'none';
+    if (typeof TileCounter !== 'undefined') TileCounter.hide();
+    if (typeof ShantenDisplay !== 'undefined') ShantenDisplay.hide();
+    if (typeof HintSystem !== 'undefined') HintSystem.clearHintHighlight();
     state = null;
     multiRound = null;
+    rules = null;
   }
 
   // ╔═══════════════════════════════════════════════════════════╗

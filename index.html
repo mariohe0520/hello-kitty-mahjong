@@ -111,6 +111,12 @@
     </div>
   </div>
 
+  <!-- Shanten badge (shown above player hand) -->
+  <div id="shanten-badge" class="shanten-badge" style="display:none"></div>
+
+  <!-- Hint button (standalone, shows during discard phase) -->
+  <button id="hint-btn" class="hint-btn-standalone" onclick="HintSystem.getHint()" style="display:none">提示 (3)</button>
+
   <!-- Action buttons -->
   <div class="action-bar" id="action-bar" style="display:none">
     <button class="action-btn btn-pass" onclick="Game.pass()">过</button>
@@ -119,6 +125,11 @@
     <button class="action-btn btn-gang" onclick="Game.gang()" style="display:none">杠</button>
     <button class="action-btn btn-hu" onclick="Game.hu()" style="display:none">胡!</button>
   </div>
+
+  <!-- Tile counter toggle button -->
+  <button id="tile-counter-btn" class="tile-counter-btn" onclick="TileCounter.toggle()" style="display:none">
+    <span>统计</span>
+  </button>
 </div>
 
 <!-- ===== STORY / CAMPAIGN ===== -->
@@ -227,6 +238,7 @@
 <script src="js/campaign.js"></script>
 <script src="js/stats.js"></script>
 <script src="js/tutorial.js"></script>
+<script src="js/enhancements.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
