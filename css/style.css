@@ -336,46 +336,48 @@ body {
 /* Table Layout */
 .table-container {
   flex: 1; display: flex; align-items: center; justify-content: center;
-  padding: 0 8px; overflow: visible; min-height: 0;
+  padding: 0 4px; overflow-x: hidden; overflow-y: visible; min-height: 0;
 }
 .mahjong-table {
-  width: calc(100% - 8px); max-width: 420px;
+  width: 100%; max-width: 430px;
   display: flex; flex-direction: column;
   background:
-    radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.06) 0%, transparent 60%),
-    radial-gradient(ellipse at center, #1a8a4c, var(--table-green), var(--table-dark));
+    radial-gradient(ellipse at 30% 20%, rgba(46,204,113,0.18) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(22,160,133,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, #1e9455 0%, #156b3e 40%, #0d4a28 100%);
   border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.4), inset 0 0 40px rgba(0,0,0,0.15);
-  border: 2px solid #0d4a28;
-  padding: 8px 10px; gap: 2px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 0 40px rgba(0,0,0,0.2);
+  border: 2px solid #0a3d22;
+  padding: 6px 8px; gap: 2px;
   min-height: min(70vh, calc(100vh - 120px));
-  overflow: visible;
+  overflow-x: hidden; overflow-y: visible;
   position: relative;
+  box-sizing: border-box;
 }
 
 .player-area {
   display: flex; flex-direction: column; align-items: center;
-  min-width: 0; min-height: 0; overflow: visible;
+  min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: visible;
 }
-.player-top { width: calc(100% + 12px); margin: 0 -6px; }
+.player-top { width: 100%; overflow: hidden; }
 .table-middle {
   display: flex; flex-direction: row; align-items: stretch;
-  width: 100%; gap: 4px; flex: 1; min-height: 200px; overflow: visible;
+  width: 100%; gap: 4px; flex: 1; min-height: 180px; overflow-x: hidden; overflow-y: visible;
 }
 .player-left, .player-right {
-  width: 48px; flex-shrink: 0;
+  width: 36px; flex-shrink: 0;
   justify-content: center; align-items: center;
-  padding: 4px 0; overflow: visible;
+  padding: 4px 0; overflow: hidden;
 }
 .table-center {
   flex: 1; display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   text-align: center; min-height: 100px; overflow: hidden;
-  background: rgba(0,0,0,0.08); border-radius: 10px;
-  margin: 4px; padding: 8px;
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(0,0,0,0.12); border-radius: 10px;
+  margin: 2px; padding: 6px;
+  border: 1px solid rgba(255,255,255,0.07);
 }
-.player-bottom { width: calc(100% + 12px); margin: 0 -6px; }
+.player-bottom { width: 100%; overflow-x: hidden; overflow-y: visible; }
 
 .player-label {
   display: flex; align-items: center; gap: 5px;
@@ -401,31 +403,62 @@ body {
 /* Hands */
 .hand { display: flex; gap: 2px; justify-content: center; }
 .hand-bottom {
-  gap: 1px; flex-wrap: nowrap; padding: 2px 0;
-  max-width: 100%; justify-content: center;
+  gap: 0px; flex-wrap: nowrap; padding: 2px 0;
+  width: 100%; max-width: 100%; justify-content: center;
+  overflow-x: hidden; overflow-y: visible;
 }
+/* Dynamic tile sizing: fits 14 tiles in any screen width.
+   Formula: clamp(min, calc((100vw - 20px) / 14), max)
+   At 390px: (390-20)/14 = 26.4px  At 430px: (430-20)/14 = 29.3px */
 .hand-bottom .tile {
-  width: 36px; min-width: 32px; max-width: 46px;
+  width: clamp(22px, calc((100vw - 20px) / 14), 34px);
+  min-width: 0 !important;
+  max-width: clamp(22px, calc((100vw - 20px) / 14), 34px) !important;
   height: auto; aspect-ratio: 3/4;
-  margin-right: -2px; position: relative;
+  margin-right: -1px; position: relative; flex-shrink: 0;
 }
 .hand-bottom .tile:last-child { margin-right: 0; }
-.hand-bottom .tile .tile-rank { font-size: 20px; font-weight: 900; }
-.hand-bottom .tile .tile-suit { font-size: 10px; }
-.hand-bottom .tile .tile-honor { font-size: 22px; font-weight: 900; }
+.hand-bottom .tile .tile-rank {
+  font-size: clamp(13px, calc((100vw - 20px) / 20), 18px);
+  font-weight: 900;
+}
+.hand-bottom .tile .tile-suit {
+  font-size: clamp(7px, calc((100vw - 20px) / 55), 10px);
+}
+.hand-bottom .tile .tile-honor {
+  font-size: clamp(14px, calc((100vw - 20px) / 19), 20px);
+  font-weight: 900;
+}
 .hand-bottom .tile.selected {
   transform: translateY(-10px) scale(1.1);
   z-index: 10;
   box-shadow: 0 6px 16px rgba(245,197,24,0.6);
   border-color: #f5c518;
 }
-.hand-top .tile { width: 24px; height: 30px; }
-.hand-side { flex-direction: column; gap: 1px; max-height: 100%; overflow: visible; }
-.hand-side .tile {
-  width: 36px; height: 14px; min-width: 36px; min-height: 14px;
-  border-radius: 2px; border-width: 1px; box-shadow: none;
+/* Top opponent: small tiles, must not overflow */
+.hand-top {
+  width: 100%; overflow: hidden; justify-content: center;
+  flex-wrap: nowrap; gap: 1px;
 }
-.hand-side .tile .tile-back { font-size: 7px; }
+.hand-top .tile {
+  width: clamp(18px, calc((100vw - 80px) / 14), 28px) !important;
+  min-width: 0 !important;
+  height: auto !important;
+  aspect-ratio: 3/4;
+  flex-shrink: 0;
+}
+/* Side opponents: column of tiles, constrained to 34px wide */
+.hand-side {
+  flex-direction: column; gap: 1px; max-height: 100%; overflow: hidden;
+  width: 34px;
+}
+.hand-side .tile {
+  width: 28px !important; height: 12px !important;
+  min-width: 28px !important; min-height: 12px !important;
+  border-radius: 2px; border-width: 1px; box-shadow: none;
+  flex-shrink: 0;
+}
+.hand-side .tile .tile-back { font-size: 6px; }
 .hand-side .tile::before, .hand-side .tile::after { display: none; }
 
 /* Discard pool */
@@ -754,39 +787,32 @@ body {
 
 /* ═══ RESPONSIVE ═══ */
 @media (max-width: 375px) {
-  .hand-top .tile { width: 20px; height: 26px; }
-  .hand-bottom .tile { min-width: 28px; max-width: 36px; }
-  .hand-bottom .tile .tile-rank { font-size: 16px !important; }
-  .hand-bottom .tile .tile-honor { font-size: 18px !important; }
-  .discard-river .tile { width: 24px !important; height: 30px !important; min-width: 24px !important; }
-  .discard-river .tile .tile-rank { font-size: 12px !important; }
-  .discard-river .tile .tile-honor { font-size: 12px !important; }
-  .player-left, .player-right { width: 40px; }
+  .discard-river .tile { width: 22px !important; height: 28px !important; min-width: 22px !important; }
+  .discard-river .tile .tile-rank { font-size: 11px !important; }
+  .discard-river .tile .tile-honor { font-size: 11px !important; }
+  .player-left, .player-right { width: 32px; }
+  .hand-side { width: 30px; }
+  .hand-side .tile { width: 26px !important; }
   .action-btn { padding: 8px 14px; font-size: 14px; }
   .home-stats-row { grid-template-columns: repeat(2, 1fr); }
   .action-tile-preview .tile { width: 44px !important; height: 58px !important; min-width: 44px !important; }
   .action-tile-preview .tile .tile-rank { font-size: 22px !important; }
   .action-tile-preview .tile .tile-honor { font-size: 24px !important; }
 }
-@media (min-width: 414px) {
-  .hand-top .tile { width: 26px; height: 32px; }
-  .hand-bottom .tile { max-width: 44px; }
-  .hand-bottom .tile .tile-rank { font-size: 22px !important; }
-  .hand-bottom .tile .tile-honor { font-size: 24px !important; }
-  .player-left, .player-right { width: 48px; }
-  .hand-side .tile { width: 40px; }
-  .discard-river .tile { width: 30px !important; height: 38px !important; }
-  .discard-river .tile .tile-rank { font-size: 16px !important; }
-  .discard-river .tile .tile-honor { font-size: 16px !important; }
-}
 @media (min-width: 768px) {
   .mahjong-table { max-width: 600px; }
-  .hand-top .tile { width: 32px; height: 40px; }
-  .hand-bottom .tile { max-width: 52px; min-width: 40px; }
-  .hand-bottom .tile .tile-rank { font-size: 24px !important; }
-  .hand-bottom .tile .tile-suit { font-size: 12px !important; }
-  .hand-bottom .tile .tile-honor { font-size: 28px !important; }
-  .player-left, .player-right { width: 60px; }
+  .hand-top .tile { width: 32px !important; height: 40px !important; }
+  .hand-bottom .tile {
+    width: 44px !important;
+    max-width: 44px !important;
+    min-width: 44px !important;
+  }
+  .hand-bottom .tile .tile-rank { font-size: 22px !important; }
+  .hand-bottom .tile .tile-suit { font-size: 11px !important; }
+  .hand-bottom .tile .tile-honor { font-size: 24px !important; }
+  .player-left, .player-right { width: 52px; }
+  .hand-side { width: 48px; }
+  .hand-side .tile { width: 42px !important; }
   .discard-river .tile { width: 34px !important; height: 44px !important; }
   .discard-river .tile .tile-rank { font-size: 18px !important; }
   .discard-river .tile .tile-honor { font-size: 18px !important; }
@@ -929,32 +955,34 @@ body {
   flex-direction: column;
   flex-wrap: nowrap;
   max-height: 100%;
-  max-width: 36px;
-  overflow-y: auto;
-  overflow-x: visible;
+  max-width: 30px;
+  width: 30px;
+  overflow-y: hidden;
+  overflow-x: hidden;
   scrollbar-width: none;
 }
 .discard-river-side::-webkit-scrollbar { display: none; }
 .discard-river-side .tile {
-  width: 30px !important; height: 18px !important;
-  min-width: 30px !important; min-height: 18px !important;
-  font-size: 9px !important;
+  width: 26px !important; height: 16px !important;
+  min-width: 26px !important; min-height: 16px !important;
+  font-size: 8px !important;
 }
 .discard-river-side .tile .tile-rank {
-  font-size: 10px !important;
+  font-size: 9px !important;
 }
 .discard-river-side .tile .tile-suit {
-  font-size: 6px !important;
+  font-size: 5px !important;
   display: none;
 }
 .discard-river-side .tile .tile-honor {
-  font-size: 10px !important;
+  font-size: 9px !important;
 }
+/* Side discard rivers: positioned inside the player-left/right container */
 .discard-river-left {
-  position: absolute; right: -38px; top: 0;
+  position: static; margin-top: 4px;
 }
 .discard-river-right {
-  position: absolute; left: -38px; top: 0;
+  position: static; margin-top: 4px;
 }
 
 /* Discard river player label */
@@ -1157,6 +1185,169 @@ body {
 .tenpai-status-badge.is-tenpai { background: rgba(34,197,94,0.2); color: #22c55e; }
 .tenpai-status-badge.not-tenpai { background: rgba(239,68,68,0.2); color: #ef4444; }
 
+/* ═══ HAND ANALYSIS PANEL (向听数 + 提示) ═══ */
+.hand-analysis-panel {
+  display: flex; align-items: center; gap: 8px;
+  justify-content: center; flex-wrap: wrap;
+  padding: 4px 10px; margin-bottom: 4px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 10px;
+  font-size: 11px; color: rgba(255,255,255,0.8);
+}
+.shanten-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 8px;
+  font-weight: 700; font-size: 12px;
+}
+.shanten-badge.tenpai { background: rgba(245,197,24,0.3); color: #f5c518; }
+.shanten-badge.close { background: rgba(34,197,94,0.2); color: #22c55e; }
+.shanten-badge.far { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+.hint-btn {
+  padding: 3px 10px; border: 1px solid rgba(34,197,94,0.4);
+  border-radius: 8px; background: rgba(34,197,94,0.15);
+  color: #22c55e; font-size: 11px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  transition: all 0.2s;
+}
+.hint-btn:active { transform: scale(0.95); background: rgba(34,197,94,0.3); }
+.remaining-counter {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; color: rgba(255,255,255,0.5);
+}
+
+/* ═══ REPLAY BUTTON ═══ */
+.replay-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border: 1px solid rgba(91,155,213,0.4);
+  border-radius: 10px; background: rgba(91,155,213,0.15);
+  color: #5b9bd5; font-size: 13px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  transition: all 0.2s; margin-top: 6px;
+}
+.replay-btn:active { transform: scale(0.95); background: rgba(91,155,213,0.3); }
+
+/* ═══ RANKING DISPLAY ═══ */
+.ranking-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 10px; border-radius: 12px;
+  font-size: 12px; font-weight: 800;
+  background: linear-gradient(135deg, rgba(245,197,24,0.2), rgba(231,76,60,0.15));
+  border: 1px solid rgba(245,197,24,0.3);
+  color: #f5c518;
+}
+.ranking-progress {
+  height: 4px; background: rgba(255,255,255,0.1);
+  border-radius: 2px; overflow: hidden; margin-top: 4px;
+  width: 100%;
+}
+.ranking-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #f5c518, #e74c3c);
+  transition: width 0.5s ease;
+}
+
+/* ═══ STATISTICS DASHBOARD ═══ */
+.stats-dashboard {
+  margin-top: 16px; padding: 16px;
+  background: var(--card-bg);
+  border-radius: 16px;
+  border: 1px solid var(--card-border);
+}
+.stats-dashboard-title {
+  font-size: 16px; font-weight: 800;
+  color: var(--pink); margin-bottom: 12px;
+}
+.stats-chart {
+  display: flex; align-items: flex-end; gap: 4px;
+  height: 80px; padding: 4px 0;
+}
+.stats-chart-bar {
+  flex: 1; min-width: 0;
+  background: linear-gradient(180deg, var(--pink), var(--purple));
+  border-radius: 4px 4px 0 0;
+  transition: height 0.5s ease;
+  position: relative;
+}
+.stats-chart-bar:hover { opacity: 0.8; }
+.stats-chart-label {
+  display: flex; justify-content: space-between;
+  font-size: 9px; color: var(--text-muted);
+  margin-top: 4px;
+}
+.stats-detail-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 13px;
+}
+.stats-detail-row:last-child { border-bottom: none; }
+.stats-detail-label { color: var(--text-light); }
+.stats-detail-value { font-weight: 700; color: var(--gold); }
+
+/* ═══ DANGER OVERLAY (tenpai opponent warning) ═══ */
+.danger-overlay {
+  position: absolute; inset: 0;
+  pointer-events: none; z-index: 50;
+  border-radius: 16px;
+  animation: dangerScreenPulse 2s ease-in-out infinite;
+}
+@keyframes dangerScreenPulse {
+  0%, 100% { box-shadow: inset 0 0 30px rgba(239,68,68,0); }
+  50% { box-shadow: inset 0 0 30px rgba(239,68,68,0.15); }
+}
+.danger-label {
+  position: absolute; top: 8px; right: 8px;
+  padding: 2px 8px; border-radius: 8px;
+  background: rgba(239,68,68,0.8);
+  color: #fff; font-size: 10px; font-weight: 700;
+  animation: dangerLabelPulse 1.5s ease-in-out infinite;
+}
+@keyframes dangerLabelPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* ═══ TILE SET SELECTOR IN SETTINGS ═══ */
+.tile-set-option {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border: 2px solid rgba(255,255,255,0.1);
+  border-radius: 10px; cursor: pointer;
+  transition: all 0.2s; background: transparent;
+  color: var(--text); font-family: inherit; font-size: 13px;
+}
+.tile-set-option.active {
+  border-color: var(--pink);
+  background: rgba(255,107,157,0.15);
+  color: var(--pink);
+}
+.tile-set-option:active { transform: scale(0.97); }
+
+/* ═══ MUSIC INDICATOR ═══ */
+.music-indicator {
+  position: absolute; bottom: 8px; left: 8px;
+  display: flex; align-items: center; gap: 4px;
+  font-size: 10px; color: rgba(255,255,255,0.4);
+  z-index: 10;
+}
+.music-bars {
+  display: flex; align-items: flex-end; gap: 1px; height: 12px;
+}
+.music-bar {
+  width: 2px; background: rgba(255,107,157,0.6);
+  border-radius: 1px;
+  animation: musicBarBounce 0.8s ease-in-out infinite;
+}
+.music-bar:nth-child(1) { height: 4px; animation-delay: 0s; }
+.music-bar:nth-child(2) { height: 8px; animation-delay: 0.15s; }
+.music-bar:nth-child(3) { height: 6px; animation-delay: 0.3s; }
+.music-bar:nth-child(4) { height: 10px; animation-delay: 0.1s; }
+@keyframes musicBarBounce {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1); }
+}
+.music-bars.paused .music-bar { animation-play-state: paused; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -1167,4 +1358,183 @@ body {
   .table-container { padding: 2px; }
   .game-topbar { padding-top: 4px; padding-bottom: 4px; }
   .action-bar { padding: 6px 16px; }
+}
+
+/* ═══ FATE CARDS SYSTEM (命运牌) ═══ */
+.fate-card-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 1px 5px; border-radius: 8px;
+  font-size: 9px; font-weight: 800;
+  background: linear-gradient(135deg, rgba(245,197,24,0.25), rgba(231,76,60,0.2));
+  border: 1px solid rgba(245,197,24,0.4);
+  color: #f5c518;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.fate-card-badge .fate-icon { font-size: 11px; }
+
+/* Fate Card reveal modal */
+.fate-reveal-overlay {
+  position: fixed; inset: 0; z-index: 5000;
+  background: rgba(0,0,0,0.85);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.fate-reveal-modal {
+  background: linear-gradient(135deg, #1a0a30, #2d1040);
+  border: 2px solid rgba(245,197,24,0.5);
+  border-radius: 24px;
+  padding: 28px 24px;
+  text-align: center;
+  max-width: 320px; width: 88%;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 60px rgba(245,197,24,0.1);
+  animation: fateReveal 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes fateReveal {
+  0% { transform: scale(0.5) rotateY(90deg); opacity: 0; }
+  100% { transform: scale(1) rotateY(0); opacity: 1; }
+}
+.fate-reveal-title {
+  font-size: 14px; color: rgba(255,255,255,0.6);
+  margin-bottom: 12px; font-weight: 600;
+}
+.fate-reveal-icon {
+  font-size: 64px; margin: 8px 0;
+  filter: drop-shadow(0 0 20px rgba(245,197,24,0.6));
+  animation: fateIconFloat 3s ease-in-out infinite;
+}
+@keyframes fateIconFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.05); }
+}
+.fate-reveal-name {
+  font-size: 28px; font-weight: 900;
+  background: linear-gradient(135deg, #f5c518, #ff6b9d);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin: 8px 0;
+}
+.fate-reveal-desc {
+  font-size: 14px; color: rgba(255,255,255,0.8);
+  line-height: 1.6; margin: 12px 0 20px;
+}
+.fate-reveal-btn {
+  display: inline-block; padding: 12px 32px;
+  background: linear-gradient(135deg, #f5c518, #e74c3c);
+  border: none; border-radius: 14px;
+  color: #fff; font-size: 16px; font-weight: 800;
+  cursor: pointer; font-family: inherit;
+  box-shadow: 0 4px 16px rgba(245,197,24,0.4);
+}
+.fate-reveal-btn:active { transform: scale(0.95); }
+
+/* All fates panel (shows all 4 players' fates) */
+.fate-cards-panel {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  justify-content: center; padding: 12px;
+}
+.fate-card-item {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 8px 12px; border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(245,197,24,0.2);
+  min-width: 70px;
+}
+.fate-card-item .fate-player { font-size: 10px; color: rgba(255,255,255,0.5); }
+.fate-card-item .fate-emoji { font-size: 24px; }
+.fate-card-item .fate-name { font-size: 11px; font-weight: 700; color: #f5c518; }
+
+/* ═══ ENHANCED WIN SCREEN ANIMATION ═══ */
+.win-overlay-bg {
+  position: fixed; inset: 0; z-index: 3500;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 40%, rgba(245,197,24,0.15), transparent 60%);
+  animation: winBgPulse 2s ease-in-out infinite;
+}
+@keyframes winBgPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Gold particles burst on win */
+@keyframes goldBurst {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.3) rotate(360deg); opacity: 0; }
+}
+.gold-particle {
+  position: fixed; width: 8px; height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #f5c518, #e74c3c);
+  pointer-events: none; z-index: 3600;
+  animation: goldBurst 1.2s ease-out forwards;
+}
+
+/* Win screen tile gold highlight */
+#win-hand .tile.winning {
+  border-color: #f5c518 !important;
+  background: linear-gradient(175deg, #fffacd 0%, #fff0a0 30%, #ffe060 100%) !important;
+  box-shadow:
+    0 1px 0 0 #f5c518,
+    0 3px 0 0 #d4a000,
+    0 5px 0 0 #b08000,
+    0 6px 12px rgba(245,197,24,0.5),
+    0 0 20px rgba(245,197,24,0.4) !important;
+  animation: winTileGlow 1s ease-in-out infinite !important;
+}
+@keyframes winTileGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(245,197,24,0.4), 0 3px 0 #d4a000, 0 6px 6px rgba(0,0,0,0.2); }
+  50% { box-shadow: 0 0 24px rgba(245,197,24,0.9), 0 3px 0 #d4a000, 0 6px 12px rgba(245,197,24,0.4); }
+}
+
+/* ═══ TILE DRAW & DISCARD ANIMATIONS (CSS only, no JS changes) ═══ */
+/* Draw bounce: applied via JS class on newly drawn tile */
+@keyframes tileDraw {
+  0% { transform: translateY(-20px) scale(0.8); opacity: 0; }
+  60% { transform: translateY(3px) scale(1.08); opacity: 1; }
+  80% { transform: translateY(-2px) scale(0.98); }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.tile.just-drawn {
+  animation: tileDraw 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  border-color: rgba(91,155,213,0.7);
+  box-shadow: 0 0 12px rgba(91,155,213,0.4), 0 3px 0 #c8b890, 0 5px 0 #b8a878 !important;
+}
+
+/* Discard slide-down */
+@keyframes tileDiscardNew {
+  0% { transform: scale(1.15) translateY(0); opacity: 1; }
+  30% { transform: scale(0.9) translateY(8px); opacity: 0.9; }
+  100% { transform: scale(0.7) translateY(30px); opacity: 0; }
+}
+.tile.discarding-new {
+  animation: tileDiscardNew 0.3s ease-in forwards;
+  pointer-events: none; z-index: 50;
+}
+
+/* ═══ SHANTEN BADGE IMPROVEMENTS ═══ */
+.shanten-badge {
+  position: fixed; right: 10px;
+  bottom: calc(80px + var(--safe-bottom));
+  display: flex; align-items: center; justify-content: center;
+  padding: 4px 10px; border-radius: 12px;
+  font-size: 12px; font-weight: 800;
+  border: 1px solid transparent;
+  z-index: 200;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.shanten-badge.shanten-pulse {
+  animation: shantenBadgePulse 1.5s ease-in-out infinite;
+}
+@keyframes shantenBadgePulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  50% { transform: scale(1.08); box-shadow: 0 2px 16px rgba(0,0,0,0.5); }
+}
+
+/* ═══ FATE CARD BADGE IN PLAYER LABELS ═══ */
+.player-label .fate-card-badge {
+  margin-left: 2px;
 }

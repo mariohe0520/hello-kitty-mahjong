@@ -689,3 +689,268 @@ const HintSystem = (() => {
     setupHandObserver();
   }
 })();
+
+
+// ╔═══════════════════════════════════════════════════════════╗
+// ║  FEATURE 6: FATE CARDS SYSTEM (命运牌)                    ║
+// ╚═══════════════════════════════════════════════════════════╝
+
+const FateCards = (() => {
+  'use strict';
+
+  // The four fate cards — each game, each player draws one
+  const FATE_DECK = [
+    {
+      id: 'dragon',
+      name: '龙',
+      icon: '🐉',
+      title: '神龙庇佑',
+      desc: '首次胡牌得分×2，扭转乾坤的神力',
+      effect: 'firstHuDouble',
+      color: '#e74c3c',
+    },
+    {
+      id: 'phoenix',
+      name: '凤',
+      icon: '🦅',
+      title: '凤凰涅槃',
+      desc: '自摸胡牌额外获得50分奖励',
+      effect: 'tsumoBonus',
+      color: '#ff6b9d',
+    },
+    {
+      id: 'qilin',
+      name: '麒麟',
+      icon: '🦄',
+      title: '麒麟慧眼',
+      desc: '可以偷看对手1张牌（每局1次）',
+      effect: 'peekOpponent',
+      color: '#9b59b6',
+    },
+    {
+      id: 'turtle',
+      name: '神龟',
+      icon: '🐢',
+      title: '神龟护法',
+      desc: '对手向你支付的点数减少10%',
+      effect: 'damageReduction',
+      color: '#2ecc71',
+    },
+  ];
+
+  // Current game's fate assignments: { playerIndex: fateCard }
+  let currentFates = null;
+  let revealed = false;
+
+  function dealFates() {
+    // Shuffle a copy of the deck
+    const deck = [...FATE_DECK];
+    for (let i = deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+
+    currentFates = {};
+    for (let i = 0; i < 4; i++) {
+      currentFates[i] = deck[i % deck.length];
+    }
+    revealed = false;
+    return currentFates;
+  }
+
+  function getFate(playerIndex) {
+    return currentFates ? currentFates[playerIndex] : null;
+  }
+
+  function getPlayerFate() {
+    return getFate(0);
+  }
+
+  // Show the player their fate card with a reveal animation
+  function revealPlayerFate(onDone) {
+    if (!currentFates || revealed) {
+      if (onDone) onDone();
+      return;
+    }
+    revealed = true;
+
+    const fate = currentFates[0];
+    if (!fate) { if (onDone) onDone(); return; }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'fate-reveal-overlay';
+    overlay.innerHTML = `
+      <div class="fate-reveal-modal">
+        <div class="fate-reveal-title">命运牌降临！</div>
+        <div class="fate-reveal-icon">${fate.icon}</div>
+        <div class="fate-reveal-name">${fate.name} — ${fate.title}</div>
+        <div class="fate-reveal-desc">${fate.desc}</div>
+        <button class="fate-reveal-btn" id="fate-confirm-btn">接受命运</button>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    document.getElementById('fate-confirm-btn').addEventListener('click', () => {
+      overlay.style.animation = 'fadeOut 0.3s ease forwards';
+      overlay.style.opacity = '0';
+      setTimeout(() => {
+        overlay.remove();
+        // Update player label badge
+        updateFateBadges();
+        if (onDone) onDone();
+      }, 300);
+    });
+  }
+
+  // Show all players' fate cards in the player labels
+  function updateFateBadges() {
+    if (!currentFates) return;
+
+    const POSITIONS = {
+      0: '.player-bottom .player-label',
+      1: '#player-right .player-label',
+      2: '#player-top .player-label',
+      3: '#player-left .player-label',
+    };
+
+    for (let i = 0; i < 4; i++) {
+      const fate = currentFates[i];
+      const sel = POSITIONS[i];
+      const label = document.querySelector(sel);
+      if (!label || !fate) continue;
+
+      // Remove old badge if any
+      const old = label.querySelector('.fate-card-badge');
+      if (old) old.remove();
+
+      // Only show icon for opponents (show full for player)
+      const badge = document.createElement('span');
+      badge.className = 'fate-card-badge';
+      if (i === 0) {
+        badge.innerHTML = `<span class="fate-icon">${fate.icon}</span>${fate.name}`;
+        badge.title = fate.desc;
+      } else {
+        badge.innerHTML = `<span class="fate-icon">${fate.icon}</span>`;
+        badge.title = '???';
+      }
+      badge.style.borderColor = fate.color + '60';
+      badge.style.color = fate.color;
+      label.appendChild(badge);
+    }
+  }
+
+  // Apply fate card effect to score result
+  function applyFateEffect(playerIndex, baseScore, isTsumo) {
+    if (!currentFates) return baseScore;
+    const fate = currentFates[playerIndex];
+    if (!fate) return baseScore;
+
+    let modified = baseScore;
+    if (fate.effect === 'firstHuDouble') {
+      modified = baseScore * 2;
+    } else if (fate.effect === 'tsumoBonus' && isTsumo) {
+      modified = baseScore + 50;
+    }
+    return modified;
+  }
+
+  // Check if player has peek ability (麒麟)
+  function canPeek(playerIndex) {
+    if (!currentFates) return false;
+    return currentFates[playerIndex]?.effect === 'peekOpponent';
+  }
+
+  // Reset for new game
+  function reset() {
+    currentFates = null;
+    revealed = false;
+  }
+
+  return { dealFates, getFate, getPlayerFate, revealPlayerFate, updateFateBadges, applyFateEffect, canPeek, reset };
+})();
+
+
+// ╔═══════════════════════════════════════════════════════════╗
+// ║  FEATURE 7: TILE DRAW & DISCARD ANIMATIONS               ║
+// ╚═══════════════════════════════════════════════════════════╝
+
+const TileAnimations = (() => {
+  'use strict';
+
+  // Animate newly drawn tile with a bounce
+  function animateDrawnTile(containerEl) {
+    if (!containerEl) return;
+    // The last tile in the container is the newly drawn one
+    const tiles = containerEl.querySelectorAll('.tile');
+    if (tiles.length === 0) return;
+    const lastTile = tiles[tiles.length - 1];
+    lastTile.classList.remove('just-drawn');
+    // Force reflow
+    void lastTile.offsetWidth;
+    lastTile.classList.add('just-drawn');
+    // Remove class after animation
+    setTimeout(() => lastTile.classList.remove('just-drawn'), 500);
+  }
+
+  // Spawn gold particle burst at position
+  function spawnGoldBurst(x, y, count = 8) {
+    for (let i = 0; i < count; i++) {
+      const el = document.createElement('div');
+      el.className = 'gold-particle';
+      const angle = (i / count) * Math.PI * 2;
+      const dist = 40 + Math.random() * 60;
+      const dx = Math.round(Math.cos(angle) * dist);
+      const dy = Math.round(Math.sin(angle) * dist);
+      el.style.cssText = `
+        left: ${x}px; top: ${y}px;
+        --dx: ${dx}px; --dy: ${dy}px;
+        animation-delay: ${i * 30}ms;
+        background: ${Math.random() > 0.5 ? '#f5c518' : '#ff6b9d'};
+      `;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1400);
+    }
+  }
+
+  return { animateDrawnTile, spawnGoldBurst };
+})();
+
+
+// ╔═══════════════════════════════════════════════════════════╗
+// ║  AUTO-INIT: Hook FateCards into game startup              ║
+// ╚═══════════════════════════════════════════════════════════╝
+
+(function hookFateCards() {
+  // Wait for Game to be available
+  function tryHook() {
+    if (typeof Game === 'undefined' || typeof Game.startGame === 'undefined') {
+      setTimeout(tryHook, 300);
+      return;
+    }
+
+    const _origStart = Game.startGame;
+    Game.startGame = async function(mode, options) {
+      // Deal fate cards for the new game
+      FateCards.dealFates();
+
+      // Run the original game start
+      const result = await _origStart.call(this, mode, options);
+
+      // Show fate card reveal after a short delay (after deal animation)
+      setTimeout(() => {
+        FateCards.revealPlayerFate(() => {
+          FateCards.updateFateBadges();
+        });
+      }, 2500);
+
+      return result;
+    };
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', tryHook);
+  } else {
+    tryHook();
+  }
+})();

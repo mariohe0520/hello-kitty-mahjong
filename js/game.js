@@ -1717,6 +1717,12 @@ const Game = (() => {
     if (player.isHuman) {
       renderHand(playerIndex, false);
 
+      // Animate the newly drawn tile (last tile in hand)
+      if (typeof TileAnimations !== 'undefined') {
+        const handEl = document.getElementById('hand-bottom');
+        if (handEl) TileAnimations.animateDrawnTile(handEl);
+      }
+
       if (typeof Skills !== 'undefined') Skills.renderSkillButton();
 
       updateTenpaiIndicator(0);
@@ -2661,11 +2667,30 @@ const Game = (() => {
       modal.style.opacity = '1';
     });
 
+    // Gold particle burst for human win
+    if (player.isHuman && typeof TileAnimations !== 'undefined') {
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      TileAnimations.spawnGoldBurst(cx, cy, 16);
+      setTimeout(() => TileAnimations.spawnGoldBurst(cx - 60, cy + 40, 8), 300);
+      setTimeout(() => TileAnimations.spawnGoldBurst(cx + 60, cy + 40, 8), 500);
+    }
+
     // Win title
     const title = modal.querySelector('.win-title');
     if (title) {
       if (player.isHuman) {
         title.textContent = '🎉 胡牌！';
+        // Show fate card bonus info if applicable
+        if (typeof FateCards !== 'undefined') {
+          const fate = FateCards.getPlayerFate();
+          if (fate) {
+            const fateNote = document.createElement('div');
+            fateNote.style.cssText = 'font-size:12px;color:rgba(255,255,255,0.6);margin-top:4px;';
+            fateNote.textContent = `${fate.icon} ${fate.title}`;
+            title.parentNode.insertBefore(fateNote, title.nextSibling);
+          }
+        }
       } else {
         title.innerHTML = `${player.avatar || '🐱'} ${player.name} 胡牌！`;
       }
