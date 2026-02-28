@@ -603,7 +603,8 @@
 .hint-btn-standalone {
   position: fixed;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 90px);
-  right: 12px;
+  left: 50%;
+  transform: translateX(-50%);
   padding: 8px 16px;
   background: linear-gradient(135deg, #3a2060 0%, #5a3080 100%);
   border: 1.5px solid rgba(155,89,182,0.7);
@@ -623,7 +624,7 @@
   pointer-events: none;
 }
 .hint-btn-standalone:active {
-  transform: scale(0.95);
+  transform: translateX(-50%) scale(0.95);
 }
 
 /* ─── Hint reasoning inside player-bottom ─── */
