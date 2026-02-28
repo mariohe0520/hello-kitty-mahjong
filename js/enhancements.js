@@ -53,6 +53,12 @@ const ShantenDisplay = (() => {
     const completeSets = (melds ? melds.length : 0) + triplets + sequences;
     const partialSets = pairs + partialSeqs;
     const neededSets = 4;
+
+    // Check for complete winning hand (shanten = -1):
+    // all 4 sets complete + at least one pure pair as head (c===2, not a triplet)
+    const purePairs = Object.keys(counts).filter(k => counts[k] === 2).length;
+    if (completeSets >= neededSets && purePairs > 0) return -1;
+
     const shanten = Math.max(0, (neededSets - completeSets) * 2 - Math.min(partialSets, neededSets - completeSets));
 
     // Check 7-pairs shanten separately
