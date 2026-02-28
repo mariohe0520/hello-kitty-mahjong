@@ -427,13 +427,13 @@ body {
   overflow: visible;
   box-sizing: border-box;
 }
-/* Dynamic tile sizing: fits 14 tiles in any screen width.
-   (100vw - 24px padding - 13 gaps×2px) / 14 tiles
-   At 390px: ~24px  At 430px: ~27px  Clamped max 32px */
+/* Dynamic tile sizing: fits 14 tiles in the table container (max 430px).
+   Uses min(100vw,430px) so desktop screens don't overflow the 430px table.
+   At 375px: ~23px  At 430px: ~27px  At 1440px (desktop): still ~27px */
 .hand-bottom .tile {
-  width: clamp(22px, calc((100vw - 52px) / 14), 32px) !important;
+  width: clamp(20px, calc((min(100vw, 430px) - 52px) / 14), 30px) !important;
   min-width: 0 !important;
-  max-width: clamp(22px, calc((100vw - 52px) / 14), 32px) !important;
+  max-width: clamp(20px, calc((min(100vw, 430px) - 52px) / 14), 30px) !important;
   height: auto !important;
   aspect-ratio: 3/4;
   flex-shrink: 0;
@@ -441,14 +441,14 @@ body {
   margin: 0;
 }
 .hand-bottom .tile .tile-rank {
-  font-size: clamp(12px, calc((100vw - 52px) / 18), 17px);
+  font-size: clamp(11px, calc((min(100vw, 430px) - 52px) / 18), 16px);
   font-weight: 900;
 }
 .hand-bottom .tile .tile-suit {
-  font-size: clamp(6px, calc((100vw - 52px) / 54), 9px);
+  font-size: clamp(5px, calc((min(100vw, 430px) - 52px) / 54), 9px);
 }
 .hand-bottom .tile .tile-honor {
-  font-size: clamp(13px, calc((100vw - 52px) / 17), 18px);
+  font-size: clamp(12px, calc((min(100vw, 430px) - 52px) / 17), 17px);
   font-weight: 900;
 }
 .hand-bottom .tile.selected {
@@ -853,16 +853,17 @@ body {
   .action-tile-preview .tile .tile-honor { font-size: 24px !important; }
 }
 @media (min-width: 768px) {
-  .mahjong-table { max-width: 600px; }
+  .mahjong-table { max-width: 520px; }
   .hand-top .tile { width: 32px !important; height: auto !important; aspect-ratio: 3/4; }
+  /* 14 tiles × 34px + 13×2px gap + 8px padding = 502px < 520px table ✓ */
   .hand-bottom .tile {
-    width: 42px !important;
-    max-width: 42px !important;
-    min-width: 42px !important;
+    width: clamp(28px, calc((min(100vw, 520px) - 60px) / 14), 34px) !important;
+    max-width: clamp(28px, calc((min(100vw, 520px) - 60px) / 14), 34px) !important;
+    min-width: 0 !important;
   }
-  .hand-bottom .tile .tile-rank { font-size: 21px !important; }
-  .hand-bottom .tile .tile-suit { font-size: 11px !important; }
-  .hand-bottom .tile .tile-honor { font-size: 22px !important; }
+  .hand-bottom .tile .tile-rank { font-size: 18px !important; }
+  .hand-bottom .tile .tile-suit { font-size: 9px !important; }
+  .hand-bottom .tile .tile-honor { font-size: 19px !important; }
   .player-left, .player-right { width: 86px; }
   .hand-side .tile { width: 44px !important; min-width: 44px !important; height: 14px !important; min-height: 14px !important; }
   .discard-river-side { width: 80px; max-width: 80px; }
