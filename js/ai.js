@@ -330,10 +330,60 @@ const AI = (() => {
   }
 
   // ─── Delayed action with personality-based timing ───
-  function delayedAction(callback, baseDelay = 500) {
-    const delay = baseDelay + Math.random() * 300 - 100;
+  // Each personality has a distinct "thinking time" feel:
+  //   aggressive  → fast, impulsive (shorter delays)
+  //   defensive   → slow, careful (longer delays, more variance)
+  //   tricky      → unpredictable (high variance, sometimes fast sometimes slow)
+  //   balanced    → moderate timing
+  function delayedAction(callback, baseDelay = 500, personality = null) {
+    let minDelay = baseDelay * 0.5;
+    let maxDelay = baseDelay * 1.6;
+    let jitter = 0;
+
+    if (personality) {
+      const pKey = typeof personality === 'string' ? personality : 'balanced';
+      switch (pKey) {
+        case 'aggressive':
+          // Fox: impulsive, snappy reactions — discards fast
+          minDelay = baseDelay * 0.35;
+          maxDelay = baseDelay * 0.9;
+          break;
+        case 'defensive':
+          // Bunny: very deliberate, thinks carefully — always slow
+          minDelay = baseDelay * 0.9;
+          maxDelay = baseDelay * 2.2;
+          jitter = Math.random() < 0.3 ? baseDelay * 0.8 : 0; // occasional extra pause
+          break;
+        case 'tricky':
+          // Fox: wildly unpredictable — sometimes instant, sometimes very slow to throw off timing
+          if (Math.random() < 0.35) {
+            minDelay = baseDelay * 0.2;
+            maxDelay = baseDelay * 0.5;
+          } else {
+            minDelay = baseDelay * 0.8;
+            maxDelay = baseDelay * 2.5;
+          }
+          break;
+        case 'cautious':
+        case 'defensive':
+          minDelay = baseDelay * 1.0;
+          maxDelay = baseDelay * 2.0;
+          break;
+        case 'wise':
+          // Thoughtful, methodical
+          minDelay = baseDelay * 0.7;
+          maxDelay = baseDelay * 1.8;
+          break;
+        default:
+          // balanced
+          minDelay = baseDelay * 0.5;
+          maxDelay = baseDelay * 1.6;
+      }
+    }
+
+    const delay = minDelay + Math.random() * (maxDelay - minDelay) + jitter;
     return new Promise(resolve => {
-      setTimeout(() => resolve(callback()), Math.max(200, delay));
+      setTimeout(() => resolve(callback()), Math.max(180, delay));
     });
   }
 
@@ -349,7 +399,7 @@ const AI = (() => {
     if (anGangs.length > 0) {
       for (const gangKey of anGangs) {
         if (decideGang(hand, gangKey, melds, personality, rules)) {
-          return await delayedAction(() => ({ action: 'angang', tileKey: gangKey }), 600);
+          return await delayedAction(() => ({ action: 'angang', tileKey: gangKey }), 600, personality);
         }
       }
     }
@@ -359,13 +409,13 @@ const AI = (() => {
     if (jiaGangs.length > 0) {
       for (const gangKey of jiaGangs) {
         if (decideGang(hand, gangKey, melds, personality, rules)) {
-          return await delayedAction(() => ({ action: 'jiagang', tileKey: gangKey }), 600);
+          return await delayedAction(() => ({ action: 'jiagang', tileKey: gangKey }), 600, personality);
         }
       }
     }
 
     const discard = chooseDiscard(hand, melds, visibleMap, discardPile, playerDiscards, personality, rules, removedSuit, difficulty);
-    return await delayedAction(() => ({ action: 'discard', tile: discard }), 500);
+    return await delayedAction(() => ({ action: 'discard', tile: discard }), 500, personality);
   }
 
   // ─── React to discard ───
@@ -382,19 +432,20 @@ const AI = (() => {
         scoreResult = rules.calculateScore(testHand, melds, discardTile, { isZimo: false });
       } catch(e) { /* scoring may fail on edge cases */ }
       if (decideHu(hand, melds, scoreResult, gameState.mode || 'beijing')) {
-        return await delayedAction(() => ({ action: 'hu', tile: discardTile }), 400);
+        // Hu reactions are always fast regardless of personality (can't hold a winning hand!)
+        return await delayedAction(() => ({ action: 'hu', tile: discardTile }), 300, 'aggressive');
       }
     }
 
     if (rules.canGang(hand, discardTile)) {
       if (decideGang(hand, discardTile.key, melds, personality, rules)) {
-        return await delayedAction(() => ({ action: 'gang', tile: discardTile }), 600);
+        return await delayedAction(() => ({ action: 'gang', tile: discardTile }), 600, personality);
       }
     }
 
     if (rules.canPeng(hand, discardTile)) {
       if (decidePeng(hand, discardTile, melds, personality, rules)) {
-        return await delayedAction(() => ({ action: 'peng', tile: discardTile }), 500);
+        return await delayedAction(() => ({ action: 'peng', tile: discardTile }), 500, personality);
       }
     }
 
@@ -402,7 +453,7 @@ const AI = (() => {
     if (chiOptions.length > 0) {
       const chiChoice = decideChi(hand, discardTile, chiOptions, melds, personality, rules);
       if (chiChoice) {
-        return await delayedAction(() => ({ action: 'chi', tile: discardTile, option: chiChoice }), 500);
+        return await delayedAction(() => ({ action: 'chi', tile: discardTile, option: chiChoice }), 500, personality);
       }
     }
 

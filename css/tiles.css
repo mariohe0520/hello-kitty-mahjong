@@ -5,48 +5,59 @@
 /* ─── Base Tile ─── */
 .tile {
   width: 36px; height: 48px; min-width: 0; min-height: 0;
-  /* Premium cream gradient with subtle warm tones */
+  /* Premium ivory gradient — warm cream tones like real mahjong tiles */
   background: linear-gradient(170deg,
-    #ffffff 0%,
-    #fffdf5 10%,
-    #faf6e8 35%,
-    #f4edcf 70%,
-    #ecdfc0 100%);
-  border: 1px solid #c4b894; border-radius: 7px;
+    #fffefb 0%,
+    #fffcf3 8%,
+    #fdf8e6 30%,
+    #f6edcc 62%,
+    #ede0b0 88%,
+    #e4d5a0 100%);
+  border: 1.5px solid #bfae7a; border-radius: 7px;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   font-weight: 700; cursor: pointer; position: relative;
   overflow: hidden; user-select: none; -webkit-user-select: none;
   box-sizing: border-box; flex-shrink: 0;
   transition: transform 0.12s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.12s ease;
+  /* Deep 3D stacked-layer shadow + warm ambient glow */
   box-shadow:
-    0 1px 0 0 #f0e8cc,
-    0 3px 0 0 #c8b890,
-    0 5px 0 0 #b4a070,
-    0 6px 3px rgba(0,0,0,0.28),
-    inset 0 1px 0 rgba(255,255,255,0.95),
-    inset 0 -1px 0 rgba(0,0,0,0.04);
+    0 1px 0 0 #f2e8c8,
+    0 2px 0 0 #dece9e,
+    0 3px 0 0 #c8b482,
+    0 4px 0 0 #b8a270,
+    0 5px 0 0 #a89060,
+    0 7px 5px rgba(0,0,0,0.32),
+    0 1px 2px rgba(0,0,0,0.12),
+    inset 0 1px 0 rgba(255,255,255,0.98),
+    inset 0 -1px 0 rgba(0,0,0,0.05),
+    inset 1px 0 0 rgba(255,255,255,0.55),
+    inset -1px 0 0 rgba(0,0,0,0.06);
 }
 
 .tile::before {
   content: ''; position: absolute;
-  bottom: -4px; left: 1px; right: 1px; height: 5px;
-  background: linear-gradient(180deg, #d4c8a0, #b8a880);
-  border-radius: 0 0 5px 5px; z-index: -1;
+  bottom: -5px; left: 2px; right: 2px; height: 6px;
+  background: linear-gradient(180deg, #cfc090 0%, #b4a068 60%, #a09050 100%);
+  border-radius: 0 0 6px 6px; z-index: -1;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
 }
 .tile::after {
   content: ''; position: absolute;
-  top: 0; left: 0; right: 0; height: 40%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.35), transparent);
+  top: 0; left: 0; right: 0; height: 45%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.42) 0%, rgba(255,255,255,0.10) 70%, transparent 100%);
   border-radius: 7px 7px 0 0; pointer-events: none; z-index: 3;
 }
+/* "Thunk" press animation — tile sinks down when pressed */
 .tile:active:not(.locked):not(.face-down) {
-  transform: translateY(2px);
+  transform: translateY(3px) scale(0.98);
   box-shadow:
-    0 1px 0 0 #d8d0b8,
-    0 2px 0 0 #c8b890,
-    0 2px 2px rgba(0,0,0,0.15),
-    inset 0 1px 0 rgba(255,255,255,0.5);
+    0 1px 0 0 #d8cca8,
+    0 1px 0 0 #c8b890,
+    0 2px 3px rgba(0,0,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.6),
+    inset 0 1px 3px rgba(0,0,0,0.1);
+  transition: transform 0.06s ease-out, box-shadow 0.06s ease-out;
 }
 
 /* ─── SVG tile image ─── */
@@ -61,17 +72,23 @@
   }
 }
 
-/* ─── Selected ─── */
+/* ─── Selected — dramatic lift with pink glow ─── */
 .tile.selected {
-  transform: translateY(-12px) scale(1.08);
+  transform: translateY(-14px) scale(1.1);
   box-shadow:
-    0 1px 0 0 #e8e0c8,
-    0 8px 0 0 #c8b890,
-    0 12px 0 0 #b8a878,
-    0 14px 4px rgba(0,0,0,0.2),
-    0 0 20px rgba(255,107,157,0.4),
-    inset 0 1px 0 rgba(255,255,255,0.8);
-  border-color: #ff6b9d; z-index: 10;
+    0 1px 0 0 #ece4c8,
+    0 3px 0 0 #d8c898,
+    0 6px 0 0 #c8b880,
+    0 10px 0 0 #b8a870,
+    0 14px 0 0 #a89860,
+    0 18px 8px rgba(0,0,0,0.28),
+    0 0 24px rgba(255,107,157,0.55),
+    0 0 8px rgba(255,107,157,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.95),
+    inset 1px 0 0 rgba(255,255,255,0.6);
+  border-color: #ff6b9d;
+  border-width: 2px;
+  z-index: 10;
 }
 
 /* ─── Face-down (Hello Kitty pink back) ─── */
@@ -114,7 +131,12 @@
 .tile-sm {
   width: 24px; height: 32px; min-width: 0; min-height: 0;
   border-radius: 5px;
-  box-shadow: 0 1px 0 0 #e8e0c8, 0 2px 0 0 #c8b890, 0 3px 0 0 #b8a878, 0 4px 2px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.6);
+  box-shadow:
+    0 1px 0 0 #ece4c8,
+    0 2px 0 0 #d8c898,
+    0 3px 0 0 #c4ae78,
+    0 5px 4px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.9);
 }
 .tile-sm .tile-rank { font-size: 13px; }
 .tile-sm .tile-suit { font-size: 7px; }
@@ -122,11 +144,16 @@
 .tile-sm .tile-back { font-size: 11px; }
 .tile-sm::before { height: 3px; }
 
-/* ─── Mini tiles (discard pool) — now larger for readability ─── */
+/* ─── Mini tiles (discard pool / tenpai indicator) ─── */
 .tile-mini {
   width: 28px; height: 36px; min-width: 0; min-height: 0;
   border-radius: 4px;
-  box-shadow: 0 1px 0 0 #d8d0b8, 0 2px 0 0 #c0b890, 0 3px 2px rgba(0,0,0,0.2);
+  /* Subtle but crisp 3D on mini tiles */
+  box-shadow:
+    0 1px 0 0 #ddd0a8,
+    0 2px 0 0 #c4b078,
+    0 3px 2px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.85);
 }
 .tile-mini .tile-rank { font-size: 14px; font-weight: 900; }
 .tile-mini .tile-suit { font-size: 8px; }
@@ -141,6 +168,16 @@
   100% { transform: translateY(0) rotateX(0); }
 }
 .tile.entering { animation: tileEnter 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+/* "Thunk" feedback: tile sinks then bounces back up when tapped/selected */
+@keyframes tileThunk {
+  0%   { transform: translateY(0) scale(1); }
+  25%  { transform: translateY(4px) scale(0.96); }
+  55%  { transform: translateY(-12px) scale(1.09); }
+  78%  { transform: translateY(-11px) scale(1.08); }
+  100% { transform: translateY(-14px) scale(1.1); }
+}
+.tile.thunk { animation: tileThunk 0.22s cubic-bezier(0.34,1.56,0.64,1) forwards; }
 
 @keyframes tileDiscard {
   0% { transform: scale(1.2); opacity: 1; }
@@ -159,9 +196,17 @@
 
 @media (hover: hover) {
   .tile:hover:not(.face-down):not(.locked):not(.selected) {
-    transform: translateY(-6px) scale(1.04);
-    box-shadow: 0 1px 0 0 #e8e0c8, 0 6px 0 0 #c8b890, 0 8px 0 0 #b8a878, 0 10px 6px rgba(0,0,0,0.25), 0 0 12px rgba(255,107,157,0.15);
-    border-color: rgba(255,107,157,0.4);
+    transform: translateY(-8px) scale(1.05);
+    box-shadow:
+      0 1px 0 0 #ece4c8,
+      0 3px 0 0 #d8c898,
+      0 6px 0 0 #c8b880,
+      0 9px 0 0 #b8a870,
+      0 12px 6px rgba(0,0,0,0.28),
+      0 0 14px rgba(255,107,157,0.2),
+      inset 0 1px 0 rgba(255,255,255,0.9);
+    border-color: rgba(255,107,157,0.5);
+    transition: transform 0.1s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.1s ease;
   }
 }
 

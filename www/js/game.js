@@ -1400,6 +1400,19 @@ const Game = (() => {
       } else {
         state.selectedTile = tile;
         renderHand(playerIndex);
+        // "Thunk" animation on the newly selected tile for satisfying click feedback
+        requestAnimationFrame(() => {
+          const container = document.getElementById('hand-bottom');
+          if (container) {
+            const selectedEl = container.querySelector('.tile.selected');
+            if (selectedEl) {
+              selectedEl.classList.remove('thunk');
+              void selectedEl.offsetWidth; // force reflow to restart animation
+              selectedEl.classList.add('thunk');
+              setTimeout(() => selectedEl.classList.remove('thunk'), 220);
+            }
+          }
+        });
       }
     }
 
@@ -1517,6 +1530,10 @@ const Game = (() => {
   }
 
   // ─── FEATURE 2: Render discard to per-player river ───
+  // Real mahjong pond layout: 6 tiles per row, max 3 rows (18 tiles).
+  // For side players (left/right): 2 columns × up to 9 rows.
+  // Oldest tiles stay; if overflow beyond max, oldest is silently removed from DOM
+  // (the game logic still tracks all discards — only display is trimmed).
   function renderDiscardToRiver(tile, playerIndex) {
     const riverId = `discard-river-${playerIndex}`;
     const river = document.getElementById(riverId);
@@ -1534,20 +1551,24 @@ const Game = (() => {
     tileEl.title = tile.name || tile.display || '';
 
     tileEl.style.opacity = '0';
-    tileEl.style.transform = 'scale(1.5)';
+    tileEl.style.transform = 'scale(1.4)';
     river.appendChild(tileEl);
+
+    // Enforce display limit: side rivers show max 12 tiles (2 cols × 6 rows),
+    // bottom/top rivers show max 18 tiles (6 cols × 3 rows).
+    // Remove the oldest displayed tile if over limit (just the DOM node — game state unchanged).
+    const isSide = playerIndex === 1 || playerIndex === 3;
+    const maxDisplay = isSide ? 12 : 18;
+    const tiles = river.querySelectorAll('.tile');
+    if (tiles.length > maxDisplay) {
+      tiles[0].remove();
+    }
 
     // Animate in with a satisfying pop
     requestAnimationFrame(() => {
-      tileEl.style.transition = 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      tileEl.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
       tileEl.style.opacity = '1';
       tileEl.style.transform = 'scale(1)';
-    });
-
-    // Auto-scroll the river to show the latest tile
-    requestAnimationFrame(() => {
-      river.scrollLeft = river.scrollWidth;
-      river.scrollTop = river.scrollHeight;
     });
   }
 
@@ -2676,11 +2697,27 @@ const Game = (() => {
       setTimeout(() => TileAnimations.spawnGoldBurst(cx + 60, cy + 40, 8), 500);
     }
 
-    // Win title
+    // Win title with flavor text based on hand quality
     const title = modal.querySelector('.win-title');
     if (title) {
       if (player.isHuman) {
-        title.textContent = '🎉 胡牌！';
+        const totalFan = scoreResult.fans.reduce((s, f) => s + (f.fan || 0), 0);
+        // Pick flavor text based on fan count — more dramatic for bigger hands
+        let flavorText = '';
+        if (isTsumo) {
+          const tsumoFlavors = ['🌸 自摸！运气来了！', '✨ 自摸！太强了！', '🎀 自摸！完美！'];
+          flavorText = tsumoFlavors[Math.floor(Math.random() * tsumoFlavors.length)];
+        } else if (totalFan >= 8) {
+          flavorText = '👑 大胡！传奇级别！';
+        } else if (totalFan >= 5) {
+          flavorText = '🔥 大胡！漂亮！';
+        } else if (totalFan >= 3) {
+          flavorText = '🎉 胡牌！表现出色！';
+        } else {
+          flavorText = '🎉 胡牌！';
+        }
+        title.textContent = flavorText;
+
         // Show fate card bonus info if applicable
         if (typeof FateCards !== 'undefined') {
           const fate = FateCards.getPlayerFate();
