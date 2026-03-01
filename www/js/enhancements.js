@@ -92,11 +92,20 @@ const ShantenDisplay = (() => {
     } else {
       badge.classList.remove('shanten-pulse');
     }
+
+    // Tenpai glow on player's hand container
+    const handEl = document.getElementById('hand-bottom');
+    if (handEl) {
+      if (shanten <= 0) handEl.classList.add('hand-tenpai');
+      else              handEl.classList.remove('hand-tenpai');
+    }
   }
 
   function hide() {
     const badge = document.getElementById('shanten-badge');
     if (badge) badge.style.display = 'none';
+    const handEl = document.getElementById('hand-bottom');
+    if (handEl) handEl.classList.remove('hand-tenpai');
   }
 
   return { update, hide, calcShanten };
@@ -978,4 +987,117 @@ const TileAnimations = (() => {
   } else {
     tryHook();
   }
+})();
+
+
+// ╔═══════════════════════════════════════════════════════════╗
+// ║  FEATURE 8: CHARACTER PORTRAIT REACTIONS                  ║
+// ╚═══════════════════════════════════════════════════════════╝
+
+const CharacterPortraits = (() => {
+  'use strict';
+
+  const PLAYER_POSITIONS = {
+    0: '#player-bottom',
+    1: '#player-right',
+    2: '#player-top',
+    3: '#player-left',
+  };
+
+  const EMOTIONS = {
+    excited: '😤',
+    happy:   '🎉',
+    sad:     '😢',
+    nervous: '😰',
+    scared:  '😱',
+  };
+
+  function showReaction(playerIndex, emotion, duration) {
+    duration = duration || 1500;
+    const emoji = EMOTIONS[emotion] || emotion;
+    const sel = PLAYER_POSITIONS[playerIndex];
+    if (!sel) return;
+    const area = document.querySelector(sel);
+    if (!area) return;
+
+    const rect = area.getBoundingClientRect();
+    const el = document.createElement('div');
+    el.className = 'portrait-reaction';
+    el.textContent = emoji;
+    // Center above the player area
+    el.style.left = (rect.left + rect.width / 2 - 16) + 'px';
+    el.style.top  = (rect.top  - 10) + 'px';
+    document.body.appendChild(el);
+
+    setTimeout(() => el.remove(), duration + 200);
+  }
+
+  return { showReaction };
+})();
+
+
+// ╔═══════════════════════════════════════════════════════════╗
+// ║  FEATURE 9: WALL TENSION SYSTEM                           ║
+// ╚═══════════════════════════════════════════════════════════╝
+
+const WallTension = (() => {
+  'use strict';
+
+  let _level = 0; // 0=normal 1=caution 2=danger 3=critical
+
+  function update(remaining) {
+    const tableEl = document.getElementById('mahjong-table');
+    const ringTextEl = document.querySelector('.remaining-ring .ring-text');
+    let level = 0;
+    if      (remaining <= 4)  level = 3;
+    else if (remaining <= 9)  level = 2;
+    else if (remaining <= 19) level = 1;
+
+    if (level === _level) return;
+    _level = level;
+
+    // Colour the ring counter
+    const colors = ['', '#f5c518', '#f97316', '#ef4444'];
+    if (ringTextEl) ringTextEl.style.color = colors[level] || '';
+
+    // Red vignette pulsing border on table
+    if (tableEl) {
+      tableEl.classList.toggle('tension-high',   level === 1);
+      tableEl.classList.toggle('tension-danger',  level >= 2);
+    }
+
+    // Critical: screen shake + all AI show scared emoji
+    if (level === 3) {
+      if (typeof Game !== 'undefined' && Game.getAnim) {
+        const anim = Game.getAnim();
+        if (anim) anim.screenShake(4, 300);
+      } else {
+        // Fallback: access via the exported Anim inside Game if available
+        try {
+          const gameState = (typeof Game !== 'undefined') ? Game.getState() : null;
+          if (gameState) {
+            const table = document.getElementById('mahjong-table');
+            if (table) {
+              table.classList.add('shake');
+              table.style.setProperty('--shake-intensity', '4px');
+              setTimeout(() => table.classList.remove('shake'), 300);
+            }
+          }
+        } catch(e) {}
+      }
+      [1, 2, 3].forEach(i => CharacterPortraits.showReaction(i, 'scared'));
+    }
+  }
+
+  function reset() {
+    _level = 0;
+    const tableEl = document.getElementById('mahjong-table');
+    if (tableEl) {
+      tableEl.classList.remove('tension-high', 'tension-danger');
+    }
+    const ringTextEl = document.querySelector('.remaining-ring .ring-text');
+    if (ringTextEl) ringTextEl.style.color = '';
+  }
+
+  return { update, reset };
 })();

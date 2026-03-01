@@ -1078,6 +1078,9 @@ const Game = (() => {
 
     state = createInitialState(mode);
 
+    // Reset wall tension for new game
+    if (typeof WallTension !== 'undefined') WallTension.reset();
+
     // Campaign level support
     if (options.campaignLevel) {
       state.campaignLevel = options.campaignLevel;
@@ -1744,6 +1747,11 @@ const Game = (() => {
         ringProgress.style.strokeDashoffset = circumference * (1 - remaining / total);
       }
     }
+
+    // Wall tension system
+    if (typeof WallTension !== 'undefined') {
+      WallTension.update(remaining);
+    }
   }
 
   // ╔═══════════════════════════════════════════════════════════╗
@@ -2150,6 +2158,17 @@ const Game = (() => {
       }
     }, 20000);
 
+    // Countdown timer strip (20s matches auto-pass timeout)
+    const existingTimer = bar.querySelector('.action-timer-bar');
+    if (existingTimer) existingTimer.remove();
+    const timerBar = document.createElement('div');
+    timerBar.className = 'action-timer-bar';
+    bar.appendChild(timerBar);
+    requestAnimationFrame(() => {
+      timerBar.style.transition = 'width 20s linear';
+      timerBar.style.width = '0%';
+    });
+
     // Top overlay animation
     bar.style.opacity = '0';
     bar.style.transform = 'translateY(-12px)';
@@ -2178,6 +2197,9 @@ const Game = (() => {
       // Remove tile preview
       const preview = bar.querySelector('.action-tile-preview');
       if (preview) preview.remove();
+      // Remove timer bar
+      const timerBar = bar.querySelector('.action-timer-bar');
+      if (timerBar) timerBar.remove();
     }
     // Hide standalone hint button too
     const hintBtnStandalone = document.getElementById('hint-btn');
@@ -2234,6 +2256,26 @@ const Game = (() => {
       if (idx >= 0) {
         chiTiles.push(player.hand.splice(idx, 1)[0]);
       }
+    }
+
+    // Steal arc animation: discard tile flies to meld area
+    try {
+      const lastDiscardEl = document.querySelector(`#discard-river-${state.lastDiscardPlayer} .tile:last-child`);
+      const handEl = document.getElementById(playerIndex === 0 ? 'hand-bottom' : `player-${['bottom','right','top','left'][playerIndex]}`);
+      if (lastDiscardEl && handEl) {
+        const clone = lastDiscardEl.cloneNode(true);
+        const r1 = lastDiscardEl.getBoundingClientRect();
+        const r2 = handEl.getBoundingClientRect();
+        clone.style.cssText = `position:fixed;z-index:999;pointer-events:none;transition:none;width:${r1.width}px;height:${r1.height}px;left:${r1.left}px;top:${r1.top}px;`;
+        document.body.appendChild(clone);
+        await Anim.arcTo(clone, r1.left, r1.top, r2.left + r2.width / 2, r2.top, 380);
+        clone.remove();
+      }
+    } catch(e) {}
+
+    // Character portrait reaction (AI stealing player's tile)
+    if (playerIndex !== 0 && typeof CharacterPortraits !== 'undefined') {
+      CharacterPortraits.showReaction(playerIndex, 'excited');
     }
 
     // Remove last discard from pool
@@ -2293,6 +2335,26 @@ const Game = (() => {
       }
     }
 
+    // Steal arc animation
+    try {
+      const lastDiscardEl = document.querySelector(`#discard-river-${state.lastDiscardPlayer} .tile:last-child`);
+      const handEl = document.getElementById(playerIndex === 0 ? 'hand-bottom' : `player-${['bottom','right','top','left'][playerIndex]}`);
+      if (lastDiscardEl && handEl) {
+        const clone = lastDiscardEl.cloneNode(true);
+        const r1 = lastDiscardEl.getBoundingClientRect();
+        const r2 = handEl.getBoundingClientRect();
+        clone.style.cssText = `position:fixed;z-index:999;pointer-events:none;transition:none;width:${r1.width}px;height:${r1.height}px;left:${r1.left}px;top:${r1.top}px;`;
+        document.body.appendChild(clone);
+        await Anim.arcTo(clone, r1.left, r1.top, r2.left + r2.width / 2, r2.top, 380);
+        clone.remove();
+      }
+    } catch(e) {}
+
+    // Character portrait reaction
+    if (playerIndex !== 0 && typeof CharacterPortraits !== 'undefined') {
+      CharacterPortraits.showReaction(playerIndex, 'excited');
+    }
+
     removeLastDiscard();
 
     player.melds.push({ type: 'peng', tiles: pengTiles });
@@ -2345,6 +2407,26 @@ const Game = (() => {
         gangTiles.push(player.hand.splice(i, 1)[0]);
         removed++;
       }
+    }
+
+    // Steal arc animation
+    try {
+      const lastDiscardEl = document.querySelector(`#discard-river-${state.lastDiscardPlayer} .tile:last-child`);
+      const handEl = document.getElementById(playerIndex === 0 ? 'hand-bottom' : `player-${['bottom','right','top','left'][playerIndex]}`);
+      if (lastDiscardEl && handEl) {
+        const clone = lastDiscardEl.cloneNode(true);
+        const r1 = lastDiscardEl.getBoundingClientRect();
+        const r2 = handEl.getBoundingClientRect();
+        clone.style.cssText = `position:fixed;z-index:999;pointer-events:none;transition:none;width:${r1.width}px;height:${r1.height}px;left:${r1.left}px;top:${r1.top}px;`;
+        document.body.appendChild(clone);
+        await Anim.arcTo(clone, r1.left, r1.top, r2.left + r2.width / 2, r2.top, 380);
+        clone.remove();
+      }
+    } catch(e) {}
+
+    // Character portrait reaction
+    if (playerIndex !== 0 && typeof CharacterPortraits !== 'undefined') {
+      CharacterPortraits.showReaction(playerIndex, 'excited');
     }
 
     removeLastDiscard();
@@ -2641,6 +2723,7 @@ const Game = (() => {
 
     // Update scores
     const points = scoreResult.baseScore;
+    const oldScores = state.players.map(p => p.score);
     if (isTsumo) {
       for (let i = 0; i < 4; i++) {
         if (i !== playerIndex) {
@@ -2658,6 +2741,29 @@ const Game = (() => {
     state.winners.push(playerIndex);
 
     updateScoreDisplay();
+
+    // Floating score popups
+    if (typeof UI !== 'undefined' && UI.showScorePopup) {
+      const SCORE_IDS = ['my-score', 'score-right', 'score-top', 'score-left'];
+      for (let i = 0; i < 4; i++) {
+        const delta = state.players[i].score - oldScores[i];
+        if (delta !== 0) {
+          const el = document.getElementById(SCORE_IDS[i]);
+          if (el) UI.showScorePopup(delta, el);
+        }
+      }
+    }
+
+    // Character portrait reactions on hu
+    if (typeof CharacterPortraits !== 'undefined') {
+      for (let i = 0; i < 4; i++) {
+        if (i === playerIndex) {
+          CharacterPortraits.showReaction(i, 'happy', 2000);
+        } else {
+          CharacterPortraits.showReaction(i, 'sad', 1800);
+        }
+      }
+    }
 
     // Update multi-round cumulative scores
     if (multiRound) {
@@ -2844,12 +2950,22 @@ const Game = (() => {
       setTimeout(() => Anim.countUp(scoreEl, 0, pts, 1200), 300);
     }
 
-    // Fans
+    // Fans — card-style display
     const fansEl = modal.querySelector('#win-fans');
     if (fansEl) {
-      fansEl.innerHTML = scoreResult.fans.map(f =>
-        `<div style="margin:4px 0"><b>${f.name}</b> (${f.fan}番) — ${f.desc}</div>`
-      ).join('');
+      fansEl.innerHTML = '';
+      const fanColors = ['#ff6b9d','#9b59b6','#e74c3c','#f5c518','#2ecc71','#5b9bd5'];
+      scoreResult.fans.forEach((f, idx) => {
+        const card = document.createElement('div');
+        card.className = 'fan-card';
+        card.style.animationDelay = `${idx * 80}ms`;
+        card.style.borderLeftColor = fanColors[idx % fanColors.length];
+        card.innerHTML = `
+          <span class="fan-badge" style="background:${fanColors[idx % fanColors.length]}">${f.fan}番</span>
+          <span class="fan-name">${f.name}</span>
+        `;
+        fansEl.appendChild(card);
+      });
 
       // Post-game analysis
       const totalFan = scoreResult.fans.reduce((s, f) => s + (f.fan || 0), 0);
@@ -2953,6 +3069,7 @@ const Game = (() => {
 
     // Tenpai payment: 1000 points from each non-tenpai to each tenpai player
     const tenpaiPayment = 1000;
+    const oldScoresDrawGame = state.players.map(p => p.score);
     if (tenpaiPlayers.length > 0 && notTenpaiPlayers.length > 0) {
       for (const nt of notTenpaiPlayers) {
         const totalPayment = tenpaiPayment * tenpaiPlayers.length;
@@ -2963,6 +3080,17 @@ const Game = (() => {
         state.players[tp].score += totalReceived;
       }
       updateScoreDisplay();
+      // Floating score popups for draw game
+      if (typeof UI !== 'undefined' && UI.showScorePopup) {
+        const SCORE_IDS = ['my-score', 'score-right', 'score-top', 'score-left'];
+        for (let i = 0; i < 4; i++) {
+          const delta = state.players[i].score - oldScoresDrawGame[i];
+          if (delta !== 0) {
+            const el = document.getElementById(SCORE_IDS[i]);
+            if (el) UI.showScorePopup(delta, el);
+          }
+        }
+      }
       // Update multi-round cumulative scores
       if (multiRound) {
         for (let i = 0; i < 4; i++) {

@@ -605,6 +605,37 @@
   transform: translate(-50%, 0);
 }
 
+/* ═══ v3.0 POLISH ANIMATIONS ═══ */
+
+/* Portrait reaction pop */
+@keyframes portraitPop {
+  0%   { transform: scale(0) translateY(10px); opacity: 0; }
+  20%  { transform: scale(1.3) translateY(-5px); opacity: 1; }
+  60%  { transform: scale(1.0) translateY(0); opacity: 1; }
+  100% { transform: scale(0.8) translateY(-20px); opacity: 0; }
+}
+.portrait-reaction {
+  position: fixed; z-index: 500; pointer-events: none;
+  font-size: 32px; line-height: 1;
+  animation: portraitPop 1.5s ease-out forwards;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
+}
+
+/* Fan card slide-in */
+@keyframes fanCardIn {
+  from { opacity: 0; transform: translateX(-20px) scale(0.95); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Wall danger vignette (pulsing red glow on table border) */
+@keyframes wallDanger {
+  0%,100% { box-shadow: inset 0 0 40px rgba(239,68,68,0); }
+  50%     { box-shadow: inset 0 0 80px rgba(239,68,68,0.35); }
+}
+.tension-danger {
+  animation: wallDanger 1.2s ease-in-out infinite;
+}
+
 /* ─── Standalone Hint Button ─── */
 .hint-btn-standalone {
   position: fixed;

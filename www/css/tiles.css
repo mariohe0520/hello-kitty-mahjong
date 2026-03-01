@@ -344,3 +344,13 @@
 
 /* Pulse for action buttons */
 @keyframes actionPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+/* ─── Tenpai hand container glow ─── */
+@keyframes tenpaiHandGlow {
+  0%,100% { box-shadow: 0 0 12px rgba(245,197,24,0.3), 0 0 4px rgba(245,197,24,0.2); }
+  50%     { box-shadow: 0 0 28px rgba(245,197,24,0.7), 0 0 12px rgba(255,107,157,0.4); }
+}
+.hand-tenpai {
+  border-radius: 10px;
+  animation: tenpaiHandGlow 2s ease-in-out infinite;
+}

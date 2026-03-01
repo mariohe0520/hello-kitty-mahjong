@@ -1712,3 +1712,29 @@ body {
 .player-label .fate-card-badge {
   margin-left: 2px;
 }
+
+/* ═══ v3.0 POLISH STYLES ═══ */
+
+/* Action bar countdown timer strip */
+.action-timer-bar {
+  position: absolute; bottom: 0; left: 0;
+  height: 3px; background: var(--pink);
+  border-radius: 0 0 12px 12px;
+  width: 100%;
+  pointer-events: none;
+}
+
+/* Fan cards in win screen */
+.fan-card {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,0.05);
+  border-left: 4px solid var(--pink);
+  border-radius: 8px; padding: 8px 12px; margin: 4px 0;
+  animation: fanCardIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.fan-badge {
+  background: var(--pink); color: white;
+  border-radius: 12px; padding: 2px 8px;
+  font-weight: 700; font-size: 13px; white-space: nowrap;
+}
+.fan-name { font-weight: 600; font-size: 14px; }
