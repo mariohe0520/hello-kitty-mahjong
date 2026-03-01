@@ -26,10 +26,18 @@
   --shadow: rgba(0,0,0,0.3);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --app-width: 100vw;
+  --app-height: 100dvh;
+  --table-width: min(430px, calc(100vw - 10px));
+  --tile-bottom-w: 24px;
+  --tile-top-w: 20px;
+  --tile-side-w: 34px;
+  --tile-side-h: 12px;
+  --side-column-w: 72px;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { height: 100%; overflow: hidden; }
+html, body { height: var(--app-height); min-height: var(--app-height); overflow: hidden; }
 body {
   font-family: -apple-system, 'PingFang SC', 'Noto Sans SC', system-ui, sans-serif;
   background: var(--pink-bg);
@@ -40,7 +48,8 @@ body {
 /* ═══ PAGES ═══ */
 .page {
   display: none;
-  height: 100vh;
+  height: var(--app-height);
+  min-height: var(--app-height);
   flex-direction: column;
   overflow: hidden;
   background: linear-gradient(180deg, #1a1020 0%, #12091a 100%);
@@ -339,7 +348,8 @@ body {
   padding: 0 4px; overflow-x: hidden; overflow-y: visible; min-height: 0;
 }
 .mahjong-table {
-  width: 100%; max-width: 430px;
+  width: 100%;
+  max-width: 430px;
   display: flex; flex-direction: column;
   background:
     radial-gradient(ellipse at 30% 20%, rgba(46,204,113,0.18) 0%, transparent 50%),
@@ -349,7 +359,7 @@ body {
   box-shadow: 0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 0 40px rgba(0,0,0,0.2);
   border: 2px solid #0a3d22;
   padding: 6px 8px; gap: 2px;
-  min-height: min(70vh, calc(100vh - 120px));
+  min-height: min(72svh, calc(var(--app-height) - 124px));
   overflow-x: hidden; overflow-y: visible;
   position: relative;
   box-sizing: border-box;
@@ -366,7 +376,7 @@ body {
 }
 /* Side player columns: hand tiles + discard river stacked vertically */
 .player-left, .player-right {
-  width: 72px; flex-shrink: 0;
+  width: var(--side-column-w); flex-shrink: 0;
   display: flex; flex-direction: column;
   justify-content: flex-start; align-items: center;
   padding: 4px 2px; overflow: hidden; gap: 3px;
@@ -387,6 +397,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  position: relative;
 }
 
 .player-label {
@@ -427,13 +438,13 @@ body {
   overflow: visible;
   box-sizing: border-box;
 }
-/* Dynamic tile sizing: fits 14 tiles in any screen width.
-   (100vw - 24px padding - 13 gaps×2px) / 14 tiles
-   At 390px: ~24px  At 430px: ~27px  Clamped max 32px */
+/* Dynamic tile sizing: fits 14 tiles in the table container (max 430px).
+   Uses min(100vw,430px) so desktop screens don't overflow the 430px table.
+   At 375px: ~23px  At 430px: ~27px  At 1440px (desktop): still ~27px */
 .hand-bottom .tile {
-  width: clamp(22px, calc((100vw - 52px) / 14), 32px) !important;
+  width: var(--tile-bottom-w) !important;
   min-width: 0 !important;
-  max-width: clamp(22px, calc((100vw - 52px) / 14), 32px) !important;
+  max-width: var(--tile-bottom-w) !important;
   height: auto !important;
   aspect-ratio: 3/4;
   flex-shrink: 0;
@@ -441,14 +452,14 @@ body {
   margin: 0;
 }
 .hand-bottom .tile .tile-rank {
-  font-size: clamp(12px, calc((100vw - 52px) / 18), 17px);
+  font-size: clamp(12px, calc(var(--tile-bottom-w) * 0.62), 18px);
   font-weight: 900;
 }
 .hand-bottom .tile .tile-suit {
-  font-size: clamp(6px, calc((100vw - 52px) / 54), 9px);
+  font-size: clamp(6px, calc(var(--tile-bottom-w) * 0.22), 9px);
 }
 .hand-bottom .tile .tile-honor {
-  font-size: clamp(13px, calc((100vw - 52px) / 17), 18px);
+  font-size: clamp(13px, calc(var(--tile-bottom-w) * 0.66), 20px);
   font-weight: 900;
 }
 .hand-bottom .tile.selected {
@@ -477,7 +488,7 @@ body {
   padding: 2px 0;
 }
 .hand-top .tile {
-  width: clamp(16px, calc((100vw - 80px) / 14), 26px) !important;
+  width: var(--tile-top-w) !important;
   min-width: 0 !important;
   height: auto !important;
   aspect-ratio: 3/4;
@@ -498,10 +509,10 @@ body {
 }
 .hand-side .tile {
   /* Thin horizontal bar — simulates rotated tile stack */
-  width: 36px !important;
-  height: 12px !important;
-  min-width: 36px !important;
-  min-height: 12px !important;
+  width: var(--tile-side-w) !important;
+  height: var(--tile-side-h) !important;
+  min-width: var(--tile-side-w) !important;
+  min-height: var(--tile-side-h) !important;
   border-radius: 3px;
   border-width: 1px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.6) !important;
@@ -532,12 +543,17 @@ body {
 .action-bar {
   display: flex; gap: 10px; justify-content: center; align-items: center;
   flex-wrap: wrap;
-  padding: 10px 16px calc(14px + var(--safe-bottom));
+  padding: 8px 12px;
   background: rgba(15,8,25,0.97);
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
-  position: fixed; bottom: 0; left: 0; right: 0;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+  position: fixed;
+  top: calc(52px + var(--safe-top));
+  bottom: auto;
+  left: max(8px, env(safe-area-inset-left, 0px));
+  right: max(8px, env(safe-area-inset-right, 0px));
   z-index: 9999;
   border-top: 2px solid rgba(245,197,24,0.6);
+  border-radius: 14px;
 }
 
 /* Tile preview in action bar — shows the discarded tile LARGE */
@@ -765,8 +781,9 @@ body {
   position: fixed; inset: 0; background: rgba(0,0,0,0.6);
   z-index: 400; display: flex; align-items: center; justify-content: center;
   opacity: 0; transition: opacity 0.3s;
+  pointer-events: none;
 }
-.settings-overlay.visible { opacity: 1; }
+.settings-overlay.visible { opacity: 1; pointer-events: auto; }
 .settings-panel {
   background: linear-gradient(180deg, #2a1e3a, #1a1028);
   border-radius: 20px; padding: 28px 24px;
@@ -853,16 +870,17 @@ body {
   .action-tile-preview .tile .tile-honor { font-size: 24px !important; }
 }
 @media (min-width: 768px) {
-  .mahjong-table { max-width: 600px; }
+  .mahjong-table { max-width: 520px; }
   .hand-top .tile { width: 32px !important; height: auto !important; aspect-ratio: 3/4; }
+  /* 14 tiles × 34px + 13×2px gap + 8px padding = 502px < 520px table ✓ */
   .hand-bottom .tile {
-    width: 42px !important;
-    max-width: 42px !important;
-    min-width: 42px !important;
+    width: clamp(28px, calc((min(100vw, 520px) - 60px) / 14), 34px) !important;
+    max-width: clamp(28px, calc((min(100vw, 520px) - 60px) / 14), 34px) !important;
+    min-width: 0 !important;
   }
-  .hand-bottom .tile .tile-rank { font-size: 21px !important; }
-  .hand-bottom .tile .tile-suit { font-size: 11px !important; }
-  .hand-bottom .tile .tile-honor { font-size: 22px !important; }
+  .hand-bottom .tile .tile-rank { font-size: 18px !important; }
+  .hand-bottom .tile .tile-suit { font-size: 9px !important; }
+  .hand-bottom .tile .tile-honor { font-size: 19px !important; }
   .player-left, .player-right { width: 86px; }
   .hand-side .tile { width: 44px !important; min-width: 44px !important; height: 14px !important; min-height: 14px !important; }
   .discard-river-side { width: 80px; max-width: 80px; }
@@ -913,8 +931,9 @@ body {
 /* Positioned as fixed overlay so it never overlaps or displaces hand tiles */
 .tenpai-indicator {
   position: fixed;
-  /* Sits just above the hand area — the hand is at the bottom, action bar is 0px below */
-  bottom: calc(72px + var(--safe-bottom));
+  /* Keep reaction hints away from bottom hand area on mobile */
+  top: calc(54px + var(--safe-top));
+  bottom: auto;
   left: 50%;
   transform: translateX(-50%);
   z-index: 500;
@@ -1063,8 +1082,8 @@ body {
 .discard-river-side {
   grid-template-columns: repeat(2, 1fr);
   gap: 2px;
-  width: 68px;
-  max-width: 68px;
+  width: calc(var(--side-column-w) - 6px);
+  max-width: calc(var(--side-column-w) - 6px);
   overflow: hidden;
   align-content: start;
   max-height: 120px;
@@ -1104,6 +1123,27 @@ body {
   padding: 1px 0;
   font-weight: 600;
   letter-spacing: 0.5px;
+}
+
+.discard-overflow-badge {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  z-index: 8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 14px;
+  padding: 0 4px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  color: #f5c518;
+  background: rgba(8, 6, 12, 0.82);
+  border: 1px solid rgba(245,197,24,0.45);
+  box-shadow: 0 1px 5px rgba(0,0,0,0.35);
+  pointer-events: none;
 }
 
 /* ═══ PLAYER WIND DISPLAY ═══ */
@@ -1485,34 +1525,45 @@ body {
 
 /* Fate Card reveal modal */
 .fate-reveal-overlay {
-  position: fixed; inset: 0; z-index: 5000;
-  background: rgba(0,0,0,0.85);
-  display: flex; align-items: center; justify-content: center;
-  backdrop-filter: blur(4px);
-  animation: fadeIn 0.3s ease;
+  position: fixed;
+  left: max(10px, env(safe-area-inset-left, 0px));
+  right: max(10px, env(safe-area-inset-right, 0px));
+  top: calc(58px + var(--safe-top));
+  z-index: 5000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  pointer-events: none;
+  animation: fadeIn 0.25s ease;
+  transition: opacity 0.2s ease;
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.fate-reveal-overlay.closing {
+  opacity: 0;
+  pointer-events: none;
+}
 
 .fate-reveal-modal {
   background: linear-gradient(135deg, #1a0a30, #2d1040);
   border: 2px solid rgba(245,197,24,0.5);
   border-radius: 24px;
-  padding: 28px 24px;
+  padding: 16px 16px 14px;
   text-align: center;
-  max-width: 320px; width: 88%;
+  width: min(340px, 100%);
   box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 60px rgba(245,197,24,0.1);
-  animation: fateReveal 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  animation: fateReveal 0.42s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events: auto;
 }
 @keyframes fateReveal {
   0% { transform: scale(0.5) rotateY(90deg); opacity: 0; }
   100% { transform: scale(1) rotateY(0); opacity: 1; }
 }
 .fate-reveal-title {
-  font-size: 14px; color: rgba(255,255,255,0.6);
-  margin-bottom: 12px; font-weight: 600;
+  font-size: 12px; color: rgba(255,255,255,0.6);
+  margin-bottom: 6px; font-weight: 600;
 }
 .fate-reveal-icon {
-  font-size: 64px; margin: 8px 0;
+  font-size: 44px; margin: 2px 0 6px;
   filter: drop-shadow(0 0 20px rgba(245,197,24,0.6));
   animation: fateIconFloat 3s ease-in-out infinite;
 }
@@ -1521,24 +1572,36 @@ body {
   50% { transform: translateY(-8px) scale(1.05); }
 }
 .fate-reveal-name {
-  font-size: 28px; font-weight: 900;
+  font-size: 20px; font-weight: 900;
   background: linear-gradient(135deg, #f5c518, #ff6b9d);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  margin: 8px 0;
+  margin: 4px 0;
 }
 .fate-reveal-desc {
-  font-size: 14px; color: rgba(255,255,255,0.8);
-  line-height: 1.6; margin: 12px 0 20px;
+  font-size: 12px; color: rgba(255,255,255,0.84);
+  line-height: 1.45; margin: 6px 0 10px;
 }
 .fate-reveal-btn {
-  display: inline-block; padding: 12px 32px;
+  display: inline-block; padding: 10px 20px;
   background: linear-gradient(135deg, #f5c518, #e74c3c);
   border: none; border-radius: 14px;
-  color: #fff; font-size: 16px; font-weight: 800;
+  color: #fff; font-size: 14px; font-weight: 800;
   cursor: pointer; font-family: inherit;
   box-shadow: 0 4px 16px rgba(245,197,24,0.4);
 }
 .fate-reveal-btn:active { transform: scale(0.95); }
+
+/* Compact mode for short screens (iPhone mini/landscape toolbar-expanded states) */
+.compact-height .table-middle { min-height: 162px; }
+.compact-height .player-label { font-size: 11px; }
+.compact-height .player-avatar { font-size: 18px; }
+.compact-height .action-bar { padding-top: 8px; padding-bottom: 8px; }
+.compact-height .hint-btn-standalone { top: calc(104px + var(--safe-top)); }
+
+.short-height .mahjong-table { padding: 4px 6px; gap: 1px; }
+.short-height .player-left, .short-height .player-right { padding-top: 2px; gap: 1px; }
+.short-height .discard-river-bottom,
+.short-height .discard-river-top { max-height: 112px; }
 
 /* All fates panel (shows all 4 players' fates) */
 .fate-cards-panel {
@@ -1626,7 +1689,8 @@ body {
 /* ═══ SHANTEN BADGE IMPROVEMENTS ═══ */
 .shanten-badge {
   position: fixed; right: 10px;
-  bottom: calc(80px + var(--safe-bottom));
+  top: calc(58px + var(--safe-top));
+  bottom: auto;
   display: flex; align-items: center; justify-content: center;
   padding: 4px 10px; border-radius: 12px;
   font-size: 12px; font-weight: 800;

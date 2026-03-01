@@ -257,9 +257,11 @@
 /* ─── FEATURE 1: Shanten Badge ─── */
 .shanten-badge {
   position: fixed;
-  bottom: calc(80px + env(safe-area-inset-bottom, 0px) + 90px);
-  left: 50%;
-  transform: translateX(-50%);
+  top: calc(58px + env(safe-area-inset-top, 0px));
+  bottom: auto;
+  right: 10px;
+  left: auto;
+  transform: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -276,8 +278,8 @@
   white-space: nowrap;
 }
 @keyframes shantenPulseAnim {
-  0%, 100% { box-shadow: 0 0 0 0 currentColor; transform: translateX(-50%) scale(1); }
-  50% { box-shadow: 0 0 10px 4px transparent; transform: translateX(-50%) scale(1.04); }
+  0%, 100% { box-shadow: 0 0 0 0 currentColor; transform: scale(1); }
+  50% { box-shadow: 0 0 10px 4px transparent; transform: scale(1.04); }
 }
 .shanten-badge.shanten-pulse {
   animation: shantenPulseAnim 1.4s ease-in-out infinite;
@@ -579,7 +581,10 @@
 }
 
 .hint-reasoning {
-  position: relative;
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  transform: translate(-50%, 6px);
   background: rgba(155,89,182,0.2);
   border: 1px solid rgba(155,89,182,0.4);
   border-radius: 10px;
@@ -587,24 +592,27 @@
   font-size: 12px;
   color: #d0a0ff;
   font-weight: 600;
-  margin: 4px 8px;
+  margin: 0;
   text-align: center;
   z-index: 51;
   opacity: 0;
-  transform: translateY(6px);
+  max-width: calc(100% - 14px);
   transition: opacity 0.25s, transform 0.25s;
+  pointer-events: none;
 }
 .hint-reasoning.visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate(-50%, 0);
 }
 
 /* ─── Standalone Hint Button ─── */
 .hint-btn-standalone {
   position: fixed;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 90px);
-  left: 50%;
-  transform: translateX(-50%);
+  top: calc(112px + env(safe-area-inset-top, 0px));
+  bottom: auto;
+  right: max(10px, env(safe-area-inset-right, 0px));
+  left: auto;
+  transform: none;
   padding: 8px 16px;
   background: linear-gradient(135deg, #3a2060 0%, #5a3080 100%);
   border: 1.5px solid rgba(155,89,182,0.7);
@@ -624,11 +632,10 @@
   pointer-events: none;
 }
 .hint-btn-standalone:active {
-  transform: translateX(-50%) scale(0.95);
+  transform: scale(0.95);
 }
 
 /* ─── Hint reasoning inside player-bottom ─── */
 #player-bottom .hint-reasoning {
-  order: -1;
-  margin: 4px 8px 6px;
+  order: initial;
 }

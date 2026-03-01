@@ -335,7 +335,9 @@ const AI = (() => {
   //   defensive   → slow, careful (longer delays, more variance)
   //   tricky      → unpredictable (high variance, sometimes fast sometimes slow)
   //   balanced    → moderate timing
-  function delayedAction(callback, baseDelay = 500, personality = null) {
+  const _BASE_DELAY = (typeof CONFIG !== 'undefined') ? CONFIG.AI_BASE_DELAY_MS : 500;
+
+  function delayedAction(callback, baseDelay = _BASE_DELAY, personality = null) {
     let minDelay = baseDelay * 0.5;
     let maxDelay = baseDelay * 1.6;
     let jitter = 0;
@@ -365,7 +367,7 @@ const AI = (() => {
           }
           break;
         case 'cautious':
-        case 'defensive':
+          // Kitty: careful and slow, takes time to think
           minDelay = baseDelay * 1.0;
           maxDelay = baseDelay * 2.0;
           break;
@@ -383,7 +385,14 @@ const AI = (() => {
 
     const delay = minDelay + Math.random() * (maxDelay - minDelay) + jitter;
     return new Promise(resolve => {
-      setTimeout(() => resolve(callback()), Math.max(180, delay));
+      setTimeout(() => {
+        try {
+          resolve(callback());
+        } catch (e) {
+          console.warn('[AI] delayedAction callback error:', e);
+          resolve({ action: 'pass' }); // 出错时安全降级，防止游戏卡死
+        }
+      }, Math.max(180, delay));
     });
   }
 
@@ -415,7 +424,7 @@ const AI = (() => {
     }
 
     const discard = chooseDiscard(hand, melds, visibleMap, discardPile, playerDiscards, personality, rules, removedSuit, difficulty);
-    return await delayedAction(() => ({ action: 'discard', tile: discard }), 500, personality);
+    return await delayedAction(() => ({ action: 'discard', tile: discard }), _BASE_DELAY, personality);
   }
 
   // ─── React to discard ───
@@ -445,7 +454,7 @@ const AI = (() => {
 
     if (rules.canPeng(hand, discardTile)) {
       if (decidePeng(hand, discardTile, melds, personality, rules)) {
-        return await delayedAction(() => ({ action: 'peng', tile: discardTile }), 500, personality);
+        return await delayedAction(() => ({ action: 'peng', tile: discardTile }), _BASE_DELAY, personality);
       }
     }
 
@@ -453,7 +462,7 @@ const AI = (() => {
     if (chiOptions.length > 0) {
       const chiChoice = decideChi(hand, discardTile, chiOptions, melds, personality, rules);
       if (chiChoice) {
-        return await delayedAction(() => ({ action: 'chi', tile: discardTile, option: chiChoice }), 500, personality);
+        return await delayedAction(() => ({ action: 'chi', tile: discardTile, option: chiChoice }), _BASE_DELAY, personality);
       }
     }
 

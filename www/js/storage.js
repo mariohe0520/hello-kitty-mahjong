@@ -40,7 +40,12 @@ const Storage = (() => {
   }
 
   function has(name) {
-    return localStorage.getItem(_key(name)) !== null;
+    try {
+      return localStorage.getItem(_key(name)) !== null;
+    } catch (e) {
+      console.warn('[Storage] has failed:', name, e);
+      return false;
+    }
   }
 
   // ─── Profile system ───
@@ -172,14 +177,19 @@ const Storage = (() => {
 
   // ─── Export / Import ───
   function exportAll() {
-    const data = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key.startsWith(PREFIX)) {
-        data[key] = localStorage.getItem(key);
+    try {
+      const data = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(PREFIX)) {
+          data[key] = localStorage.getItem(key);
+        }
       }
+      return JSON.stringify(data);
+    } catch (e) {
+      console.warn('[Storage] exportAll failed:', e);
+      return '{}';
     }
-    return JSON.stringify(data);
   }
 
   function importAll(jsonStr) {

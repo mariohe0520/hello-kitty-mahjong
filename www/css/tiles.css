@@ -60,16 +60,14 @@
   transition: transform 0.06s ease-out, box-shadow 0.06s ease-out;
 }
 
-/* ─── SVG tile image ─── */
-.tile-img { display: none; }
-@media (min-width: 768px) {
-  .tile-img {
-    position: absolute; top: 0; left: 0;
-    width: 100%; height: 100%; object-fit: contain;
-    display: block; pointer-events: none; z-index: 2;
-    background: linear-gradient(175deg, #fffef8, #f5f0e0 40%, #e8e0c8);
-    border-radius: inherit; padding: 3px; box-sizing: border-box;
-  }
+/* ─── SVG tile image ───
+   Enable on mobile too, so real tile artwork is visible on iPhone. */
+.tile-img {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%; object-fit: contain;
+  display: block; pointer-events: none; z-index: 2;
+  background: linear-gradient(175deg, #fffef8, #f5f0e0 40%, #e8e0c8);
+  border-radius: inherit; padding: 3px; box-sizing: border-box;
 }
 
 /* ─── Selected — dramatic lift with pink glow ─── */

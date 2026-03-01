@@ -300,8 +300,11 @@ const BeijingRules = (() => {
         }))
       ];
 
+      // 花色分析需包含副露面子（locked melds），否则清一色/混一色判定有误
       const allKeys = allTiles.map(t => t.key);
-      const suits = new Set(allKeys.map(k => TILES[k]?.suit));
+      const lockedMeldKeys = lockedMelds.flatMap(m => m.tiles.map(t => t.key));
+      const allKeysWithMelds = [...allKeys, ...lockedMeldKeys];
+      const suits = new Set(allKeysWithMelds.map(k => TILES[k]?.suit));
       const numSuits = [...suits].filter(s => ['wan', 'tiao', 'tong'].includes(s));
       const hasHonors = [...suits].some(s => ['feng', 'jian'].includes(s));
 
@@ -311,8 +314,8 @@ const BeijingRules = (() => {
         currentFan += SCORING.pinghu.fan;
       }
 
-      // Duanyao (no 1/9/honors)
-      const allTileKeys = allKeys;
+      // Duanyao (no 1/9/honors)：需检查含副露的全部牌
+      const allTileKeys = allKeysWithMelds;
       const hasTerHon = allTileKeys.some(k => {
         const t = TILES[k];
         return !t || t.rank === 1 || t.rank === 9 || ['feng', 'jian'].includes(t.suit);
@@ -410,8 +413,9 @@ const BeijingRules = (() => {
         currentFan += SCORING.xiaoSX.fan;
       }
 
-      // San anke (three concealed triplets)
-      const concealedTriplets = decomp.melds.filter(m => m.type === 'triplet').length;
+      // San anke (三暗刻): 暗刻数包含手牌分解的刻子 + 暗杠 locked melds
+      const anGangCount = lockedMelds.filter(m => m.gangType === 'an').length;
+      const concealedTriplets = decomp.melds.filter(m => m.type === 'triplet').length + anGangCount;
       if (concealedTriplets >= 3) {
         currentFans.push(SCORING.sanAnke);
         currentFan += SCORING.sanAnke.fan;

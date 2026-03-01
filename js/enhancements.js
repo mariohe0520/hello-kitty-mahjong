@@ -797,15 +797,34 @@ const FateCards = (() => {
 
     document.body.appendChild(overlay);
 
-    document.getElementById('fate-confirm-btn').addEventListener('click', () => {
-      overlay.style.animation = 'fadeOut 0.3s ease forwards';
-      overlay.style.opacity = '0';
+    let finished = false;
+    const cleanup = () => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(autoCloseTimer);
+      document.removeEventListener('keydown', onEscClose);
+      overlay.classList.add('closing');
       setTimeout(() => {
         overlay.remove();
         // Update player label badge
         updateFateBadges();
         if (onDone) onDone();
-      }, 300);
+      }, 260);
+    };
+
+    const onEscClose = (e) => {
+      if (e.key === 'Escape') cleanup();
+    };
+
+    const autoCloseTimer = setTimeout(cleanup, 8000);
+    document.addEventListener('keydown', onEscClose);
+
+    const confirmBtn = overlay.querySelector('#fate-confirm-btn');
+    if (confirmBtn) confirmBtn.addEventListener('click', cleanup, { once: true });
+
+    // Click outside the modal also closes to avoid interaction deadlocks.
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) cleanup();
     });
   }
 

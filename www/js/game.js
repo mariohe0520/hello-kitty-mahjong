@@ -23,15 +23,22 @@ const Game = (() => {
 
   const TILE_ASSET_BASE = 'assets/tiles/';
 
-  // Preload all tile images
+  // Preload all tile images — delegate to UI module when available
   const imageCache = {};
   function preloadImages() {
+    if (typeof UI !== 'undefined' && UI.preloadImages) {
+      UI.preloadImages(TILE_ASSET_BASE);
+      return;
+    }
+    // Fallback: inline preload (used if UI.js not yet loaded)
     const keys = Object.values(TILE_IMAGE_MAP);
     keys.push('Back', 'Front');
     for (const name of keys) {
-      const img = new Image();
-      img.src = `${TILE_ASSET_BASE}${name}.svg`;
-      imageCache[name] = img;
+      if (!imageCache[name]) {
+        const img = new Image();
+        img.src = `${TILE_ASSET_BASE}${name}.svg`;
+        imageCache[name] = img;
+      }
     }
   }
 
@@ -999,10 +1006,23 @@ const Game = (() => {
 
   function createInitialState(mode = 'beijing') {
     rules = mode === 'sichuan' ? SichuanRules : BeijingRules;
-    const deck = TileUtils.shuffle(rules.createDeck());
+    // 使用 Wall 模块创建牌山
+    const deck = (typeof Wall !== 'undefined')
+      ? Wall.create(mode)
+      : TileUtils.shuffle(rules.createDeck());
 
     const dealerIdx = multiRound ? multiRound.dealerIndex : 0;
-    const scores = multiRound ? [...multiRound.cumulativeScores] : [25000, 25000, 25000, 25000];
+    // INITIAL_SCORE 从 CONFIG 读取，方便统一调整
+    const initScore = (typeof CONFIG !== 'undefined') ? CONFIG.INITIAL_SCORE : 25000;
+    const scores = multiRound ? [...multiRound.cumulativeScores] : Array(4).fill(initScore);
+
+    // 席位配置从 CONFIG.SEATS 读取（姓名/头像/性格）
+    const seats = (typeof CONFIG !== 'undefined') ? CONFIG.SEATS : [
+      { name: '我',   avatar: '🎀', personality: null,        charId: null,    isHuman: true  },
+      { name: '下家', avatar: '🦊', personality: 'tricky',    charId: 'fox',   isHuman: false },
+      { name: '对家', avatar: '🐻', personality: 'aggressive', charId: 'bear',  isHuman: false },
+      { name: '上家', avatar: '🐰', personality: 'defensive', charId: 'bunny', isHuman: false },
+    ];
 
     return {
       mode,
@@ -1010,27 +1030,34 @@ const Game = (() => {
       wall: [...deck],
       wallInitialLength: deck.length,
       drawIndex: 0,
-      players: [
-        { hand: [], melds: [], discards: [], score: scores[0], isHuman: true, name: '我', avatar: '🎀', personality: null, charId: null, removedSuit: null, hasWon: false, pengCount: 0, chiCount: 0, gangCount: 0 },
-        { hand: [], melds: [], discards: [], score: scores[1], isHuman: false, name: '狐狸', avatar: '🦊', personality: 'tricky', charId: 'fox', removedSuit: null, hasWon: false, pengCount: 0, chiCount: 0, gangCount: 0 },
-        { hand: [], melds: [], discards: [], score: scores[2], isHuman: false, name: '大熊', avatar: '🐻', personality: 'aggressive', charId: 'bear', removedSuit: null, hasWon: false, pengCount: 0, chiCount: 0, gangCount: 0 },
-        { hand: [], melds: [], discards: [], score: scores[3], isHuman: false, name: '小兔', avatar: '🐰', personality: 'defensive', charId: 'bunny', removedSuit: null, hasWon: false, pengCount: 0, chiCount: 0, gangCount: 0 },
-      ],
-      currentPlayer: dealerIdx,    // dealer starts
+      players: seats.map((seat, i) => ({
+        hand: [], melds: [], discards: [],
+        score: scores[i],
+        isHuman: seat.isHuman,
+        name: seat.name,
+        avatar: seat.avatar,
+        personality: seat.personality,
+        charId: seat.charId,
+        removedSuit: null,
+        hasWon: false,
+        pengCount: 0, chiCount: 0, gangCount: 0,
+      })),
+      currentPlayer: dealerIdx,
       dealer: dealerIdx,
       roundWind: multiRound ? multiRound.prevailingWind : 'fe',
       round: multiRound ? multiRound.handsPlayed + 1 : 1,
-      discardPile: [],      // all discards
-      discardHistory: [],   // FEATURE 2: per-player discard tracking [{tile, playerIndex}, ...]
+      discardPile: [],
+      discardHistory: [],
       lastDiscard: null,
       lastDiscardPlayer: -1,
-      turnPhase: 'idle',    // idle, draw, discard, action, waiting
+      turnPhase: 'idle',
       selectedTile: null,
-      lastDrawnTile: null,  // Track the tile just drawn for tsumo detection
+      lastDrawnTile: null,
       gameOver: false,
       winners: [],
-      gameStartTime: Date.now(), // For speed challenges
+      gameStartTime: Date.now(),
       turnCount: 0,
+      _actionTimeout: null, // 操作按钮超时 timer
     };
   }
 
@@ -1135,7 +1162,10 @@ const Game = (() => {
                  'discard-river-0', 'discard-river-1', 'discard-river-2', 'discard-river-3'];
     for (const id of ids) {
       const el = document.getElementById(id);
-      if (el) el.innerHTML = '';
+      if (el) {
+        el.innerHTML = '';
+        if (el.dataset) delete el.dataset.overflowCount;
+      }
     }
     // Hide tenpai indicator
     const tenpaiEl = document.getElementById('tenpai-indicator');
@@ -1554,14 +1584,33 @@ const Game = (() => {
     tileEl.style.transform = 'scale(1.4)';
     river.appendChild(tileEl);
 
-    // Enforce display limit: side rivers show max 12 tiles (2 cols × 6 rows),
-    // bottom/top rivers show max 18 tiles (6 cols × 3 rows).
+    // Enforce display limit: side rivers show max RIVER_MAX_SIDE tiles,
+    // bottom/top rivers show max RIVER_MAX_BOTTOM tiles.
     // Remove the oldest displayed tile if over limit (just the DOM node — game state unchanged).
     const isSide = playerIndex === 1 || playerIndex === 3;
-    const maxDisplay = isSide ? 12 : 18;
+    const maxDisplay = isSide
+      ? (typeof CONFIG !== 'undefined' ? CONFIG.RIVER_MAX_SIDE   : 12)
+      : (typeof CONFIG !== 'undefined' ? CONFIG.RIVER_MAX_BOTTOM : 18);
     const tiles = river.querySelectorAll('.tile');
+    const prevOverflow = parseInt(river.dataset.overflowCount || '0', 10);
     if (tiles.length > maxDisplay) {
       tiles[0].remove();
+      river.dataset.overflowCount = String(prevOverflow + 1);
+    } else if (!river.dataset.overflowCount) {
+      river.dataset.overflowCount = '0';
+    }
+
+    const overflowCount = parseInt(river.dataset.overflowCount || '0', 10);
+    let overflowBadge = river.querySelector('.discard-overflow-badge');
+    if (overflowCount > 0) {
+      if (!overflowBadge) {
+        overflowBadge = document.createElement('span');
+        overflowBadge.className = 'discard-overflow-badge';
+        river.appendChild(overflowBadge);
+      }
+      overflowBadge.textContent = `+${overflowCount}`;
+    } else if (overflowBadge) {
+      overflowBadge.remove();
     }
 
     // Animate in with a satisfying pop
@@ -1935,6 +1984,10 @@ const Game = (() => {
 
     for (const { playerIndex: pIdx, decision } of aiDecisions) {
       if (decision.action === 'hu') {
+        // 二次验证缺一门等特殊规则，防止 AI 非法胡牌
+        if (!canPlayerHu(pIdx, [...state.players[pIdx].hand, tile], state.players[pIdx].melds)) {
+          continue;
+        }
         await handleHu(pIdx, tile, false);
         return;
       } else if (decision.action === 'gang') {
@@ -2089,18 +2142,36 @@ const Game = (() => {
     const hintBtnStandalone = document.getElementById('hint-btn');
     if (hintBtnStandalone) hintBtnStandalone.style.display = 'none';
 
-    // Slide up animation
-    bar.style.transform = 'translateY(100%)';
-    bar.style.transition = 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    // 20秒超时自动过牌，防止玩家忽视操作按钮导致游戏永久冻结
+    if (state._actionTimeout) clearTimeout(state._actionTimeout);
+    state._actionTimeout = setTimeout(() => {
+      if (state && state.turnPhase === 'action') {
+        pass();
+      }
+    }, 20000);
+
+    // Top overlay animation
+    bar.style.opacity = '0';
+    bar.style.transform = 'translateY(-12px)';
+    bar.style.transition = 'transform 0.22s ease, opacity 0.22s ease';
     requestAnimationFrame(() => {
       bar.style.transform = 'translateY(0)';
+      bar.style.opacity = '1';
     });
   }
 
   function hideActionBar() {
+    // 清除自动过牌超时
+    if (state && state._actionTimeout) {
+      clearTimeout(state._actionTimeout);
+      state._actionTimeout = null;
+    }
     const bar = document.getElementById('action-bar');
     if (bar) {
       bar.style.display = 'none';
+      bar.style.opacity = '';
+      bar.style.transform = '';
+      bar.style.transition = '';
       bar.querySelectorAll('.action-btn').forEach(btn => {
         btn.style.animation = '';
       });
@@ -2979,8 +3050,12 @@ const Game = (() => {
       const lastEntry = state.discardHistory[state.discardHistory.length - 1];
       const riverId = `discard-river-${lastEntry.playerIndex}`;
       const river = document.getElementById(riverId);
-      if (river && river.lastChild) {
-        river.lastChild.remove();
+      if (river) {
+        // 使用 querySelectorAll('.tile') 避免误删溢出徽章（overflow badge）
+        const tiles = river.querySelectorAll('.tile');
+        if (tiles.length > 0) {
+          tiles[tiles.length - 1].remove();
+        }
       }
       const player = state.players[lastEntry.playerIndex];
       if (player && player.discards.length > 0) {
@@ -3195,6 +3270,10 @@ const Game = (() => {
 
     for (const { playerIndex: pIdx, decision } of aiDecisions) {
       if (decision.action === 'hu') {
+        // 二次验证缺一门等特殊规则，防止 AI 非法胡牌
+        if (!canPlayerHu(pIdx, [...state.players[pIdx].hand, tile], state.players[pIdx].melds)) {
+          continue;
+        }
         await handleHu(pIdx, tile, false);
         return;
       } else if (decision.action === 'gang') {

@@ -6,9 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>🎀 Hello Kitty 麻将</title>
-<link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/tiles.css">
-<link rel="stylesheet" href="css/animations.css">
+<link rel="stylesheet" href="css/style.css?v=20260301-2">
+<link rel="stylesheet" href="css/tiles.css?v=20260301-2">
+<link rel="stylesheet" href="css/animations.css?v=20260301-2">
 </head>
 <body>
 
@@ -226,19 +226,58 @@
   </div>
 </div>
 
-<script src="js/tiles.js"></script>
-<script src="js/rules-beijing.js"></script>
-<script src="js/rules-sichuan.js"></script>
-<script src="js/storage.js"></script>
-<script src="js/characters.js"></script>
-<script src="js/ai.js"></script>
-<script src="js/skills.js"></script>
-<script src="js/commentary.js"></script>
-<script src="js/game.js"></script>
-<script src="js/campaign.js"></script>
-<script src="js/stats.js"></script>
-<script src="js/tutorial.js"></script>
-<script src="js/enhancements.js"></script>
-<script src="js/app.js"></script>
+<!-- ======================================================
+     加载顺序（依赖从上到下）：
+     1. 基础工具层（无依赖）
+     2. 规则引擎层
+     3. 游戏逻辑层
+     4. UI / 应用层
+     ====================================================== -->
+
+<!-- 1a. 全局配置（常量，无依赖） -->
+<script src="js/config.js?v=20260301-3"></script>
+
+<!-- 1b. 牌的定义和工具函数 -->
+<script src="js/tiles.js?v=20260301-3"></script>
+
+<!-- 1c. 纯工具模块（依赖 tiles.js / config.js） -->
+<script src="js/wall.js?v=20260301-3"></script>
+<script src="js/hand.js?v=20260301-3"></script>
+<script src="js/meld.js?v=20260301-3"></script>
+
+<!-- 2a. 规则引擎底层 -->
+<script src="js/rules-beijing.js?v=20260301-3"></script>
+<script src="js/rules-sichuan.js?v=20260301-3"></script>
+
+<!-- 2b. 统一规则适配器（依赖两个规则引擎） -->
+<script src="js/rules.js?v=20260301-3"></script>
+
+<!-- 2c. 积分结算（依赖 config.js） -->
+<script src="js/scoring.js?v=20260301-3"></script>
+
+<!-- 3a. 存档（依赖 storage.js） -->
+<script src="js/storage.js?v=20260301-3"></script>
+<script src="js/save.js?v=20260301-3"></script>
+
+<!-- 3b. 角色 / AI -->
+<script src="js/characters.js?v=20260301-3"></script>
+<script src="js/ai.js?v=20260301-3"></script>
+<script src="js/skills.js?v=20260301-3"></script>
+
+<!-- 3c. 解说 -->
+<script src="js/commentary.js?v=20260301-3"></script>
+
+<!-- 4a. UI 工具（纯 DOM 工具，renderTile 等） -->
+<script src="js/ui.js?v=20260301-3"></script>
+
+<!-- 4b. 核心游戏引擎（依赖上述所有） -->
+<script src="js/game.js?v=20260301-3"></script>
+
+<!-- 4c. 应用层（依赖 game.js） -->
+<script src="js/campaign.js?v=20260301-3"></script>
+<script src="js/stats.js?v=20260301-3"></script>
+<script src="js/tutorial.js?v=20260301-3"></script>
+<script src="js/enhancements.js?v=20260301-3"></script>
+<script src="js/app.js?v=20260301-3"></script>
 </body>
 </html>

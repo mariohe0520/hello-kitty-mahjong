@@ -147,7 +147,11 @@ const SichuanRules = (() => {
     return results.length > 0 ? results : null;
   }
 
-  function checkCanHu(hand, tile, melds = []) {
+  function checkCanHu(hand, tile, melds = [], removedSuit = null) {
+    // 四川规则：未完成缺一门不能胡牌
+    if (removedSuit && !isQueYiMenSatisfied([...hand, tile], removedSuit)) {
+      return null;
+    }
     const testHand = [...hand, tile];
     return checkWin(testHand, melds);
   }
@@ -215,14 +219,14 @@ const SichuanRules = (() => {
     // ─── Check duidui ───
     let isDuidui = false;
     if (!isQidui) {
-      // Extract melds to check for all triplets
-      const decomps = extractMelds(allTiles);
-      if (decomps.length > 0) {
-        const allTrip = decomps.some(d =>
-          d.melds.every(m => m.type === 'triplet') &&
-          lockedMelds.every(m => m.type !== 'chi')
-        );
-        if (allTrip) isDuidui = true;
+      // 检查 locked melds 中没有吃（chi），且手牌全是刻子
+      const noChiInMelds = lockedMelds.every(m => m.type !== 'chi');
+      if (noChiInMelds) {
+        const decomps = extractMelds(allTiles);
+        if (decomps.length > 0) {
+          const allTrip = decomps.some(d => d.melds.every(m => m.type === 'triplet'));
+          if (allTrip) isDuidui = true;
+        }
       }
     }
 

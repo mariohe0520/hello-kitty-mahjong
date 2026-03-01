@@ -61,25 +61,27 @@ function randomFrom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// 播放搞笑语音
+// 播放搞笑语音（使用浏览器原生 SpeechSynthesis）
 function playFunnyVoice(type) {
   const voices = FUNNY_VOICES[type] || FUNNY_VOICES.hu;
   const text = randomFrom(voices);
-  
-  // 使用macOS say
-  const { exec } = require('child_process');
-  const voice = type === 'hu' ? 'Ting-Ting' : 'Mei-Jia';
-  exec(`say -v ${voice} "${text}"`, (err) => {
-    if (err) console.error('语音播放失败:', err);
-  });
-  
+
+  // 使用 Web Speech API（浏览器原生，无需 Node.js）
+  if ('speechSynthesis' in window) {
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'zh-CN';
+    utter.rate = 1.1;
+    utter.pitch = type === 'hu' ? 1.3 : 1.0;
+    window.speechSynthesis.speak(utter);
+  }
+
   // 显示表情
   showFunnyFace(type);
 }
 
-// 显示搞笑表情
+// 显示搞笑表情（根据 type 选择对应表情组）
 function showFunnyFace(type) {
-  const faces = FUNNY_FACES.happy || ["😄"];
+  const faces = FUNNY_FACES[type] || FUNNY_FACES.happy || ["😄"];
   const face = randomFrom(faces);
   
   // 创建临时表情元素
@@ -130,7 +132,21 @@ window.MahjongFunny = {
 
 console.log("🎉 麻将搞笑增强已加载!");
 
-// 🎮 多人对战房间系统
+// 显示消息云朵（toast 式弹窗）
+function showFunnyCloud(message) {
+  const el = document.createElement('div');
+  el.textContent = message;
+  el.style.cssText = `
+    position:fixed;top:20%;left:50%;transform:translateX(-50%);
+    background:rgba(0,0,0,0.75);color:#fff;padding:10px 20px;
+    border-radius:20px;font-size:16px;z-index:9999;
+    animation:facePopup 1.5s ease-out forwards;pointer-events:none;
+  `;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1500);
+}
+
+// 🎮 多人对战房间系统（本地存根，无网络功能）
 const ROOM_SYSTEM = {
   // 创建房间
   createRoom: () => {
@@ -142,12 +158,12 @@ const ROOM_SYSTEM = {
       status: 'waiting'
     };
   },
-  
+
   // 快速加入动画
   joinAnimation: (playerName) => {
     showFunnyCloud(`${playerName}加入了游戏！`);
   },
-  
+
   // 离开动画
   leaveAnimation: (playerName) => {
     showFunnyCloud(`${playerName}跑路了！`);

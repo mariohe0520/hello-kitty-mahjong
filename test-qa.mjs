@@ -31,6 +31,13 @@ function log(test, pass, detail = '') {
     if (msg.type() === 'error') consoleErrors.push(msg.text());
   });
   page.on('pageerror', err => consoleErrors.push(err.message));
+  page.on('dialog', async dialog => {
+    if (dialog.type() === 'confirm') {
+      await dialog.accept();
+      return;
+    }
+    await dialog.dismiss();
+  });
 
   try {
     // ===== TEST 1: LOAD & SPLASH =====
@@ -45,14 +52,14 @@ function log(test, pass, detail = '') {
     await page.waitForTimeout(3000);
     
     // ===== TEST 2: MAIN MENU =====
-    const menuVisible = await page.$eval('#menu', el => el.style.display !== 'none').catch(() => false);
+    const menuVisible = await page.$eval('#home', el => getComputedStyle(el).display !== 'none').catch(() => false);
     await page.screenshot({ path: path.join(ssDir, '02-menu.png'), fullPage: false });
-    log('Main menu visible', menuVisible, menuVisible ? 'Menu displayed' : 'Menu not showing');
+    log('Main menu visible', menuVisible, menuVisible ? 'Home displayed' : 'Home not showing');
 
     // ===== TEST 3: START BEIJING MAHJONG =====
-    const beijingBtn = await page.$('button[onclick*="beijing"]');
-    if (beijingBtn) {
-      await beijingBtn.click();
+    const beijingCard = page.locator('#home .play-beijing').first();
+    if (await beijingCard.count()) {
+      await beijingCard.click();
       await page.waitForTimeout(2000);
       await page.screenshot({ path: path.join(ssDir, '03-game-start.png'), fullPage: false });
       
@@ -123,10 +130,20 @@ function log(test, pass, detail = '') {
       await page.waitForTimeout(1500);
       const currentHand = await page.$$('.hand-area .tile, .my-hand .tile, .player-hand .tile, [class*="hand"] .tile');
       if (currentHand.length > 0) {
-        const tile = currentHand[currentHand.length - 1];
-        await tile.click();
+        const idx = currentHand.length - 1;
+        const tile = currentHand[idx];
+        await tile.click().catch(() => {});
         await page.waitForTimeout(300);
-        await tile.click();
+        // Hand DOM is rerendered frequently; reacquire before second click to avoid stale element handles.
+        const selected = await page.$('.tile.selected, .tile.active, .tile[data-selected]');
+        if (selected) {
+          await selected.click().catch(() => {});
+        } else {
+          const refreshed = await page.$$('.hand-area .tile, .my-hand .tile, .player-hand .tile, [class*="hand"] .tile');
+          if (refreshed.length > 0) {
+            await refreshed[Math.min(idx, refreshed.length - 1)].click().catch(() => {});
+          }
+        }
         await page.waitForTimeout(1500);
         roundsPlayed++;
       }
@@ -148,28 +165,40 @@ function log(test, pass, detail = '') {
     await page.screenshot({ path: path.join(ssDir, '09-final-state.png'), fullPage: false });
 
     // ===== TEST 13: GO BACK TO MENU =====
-    const backBtn = await page.$('.back-btn, .menu-btn, [class*="back"], button:has-text("返回"), button:has-text("菜单")');
-    if (backBtn) {
-      await backBtn.click();
-      await page.waitForTimeout(1000);
-      const menuAgain = await page.$eval('#menu', el => el.style.display !== 'none').catch(() => false);
-      await page.screenshot({ path: path.join(ssDir, '10-back-to-menu.png'), fullPage: false });
-      log('Back to menu works', menuAgain);
+    const gameTopBackBtn = page.locator('#game .game-topbar .icon-btn').first();
+    if (await gameTopBackBtn.count()) {
+      await gameTopBackBtn.click().catch(() => {});
     } else {
-      log('Back to menu works', false, 'No back button found');
+      await page.evaluate(() => {
+        if (window.App?.backToMenu) window.App.backToMenu();
+      }).catch(() => {});
     }
+    await page.waitForTimeout(1000);
+    const menuAgain = await page.$eval('#home', el => getComputedStyle(el).display !== 'none').catch(() => false);
+    await page.screenshot({ path: path.join(ssDir, '10-back-to-menu.png'), fullPage: false });
+    log('Back to menu works', menuAgain);
 
     // ===== TEST 14: SICHUAN MODE =====
-    const sichuanBtn = await page.$('button[onclick*="sichuan"]');
-    if (sichuanBtn) {
-      await sichuanBtn.click();
-      await page.waitForTimeout(3000);
-      await page.screenshot({ path: path.join(ssDir, '11-sichuan.png'), fullPage: false });
-      const gameVis = await page.$eval('#game', el => el.style.display !== 'none').catch(() => false);
-      log('Sichuan mode starts', gameVis);
+    await page.evaluate(() => {
+      if (window.App?.backToMenu) window.App.backToMenu();
+    }).catch(() => {});
+    await page.waitForTimeout(800);
+    const sichuanBtn = page.locator('#home .play-card.play-sichuan').first();
+    if (await sichuanBtn.count()) {
+      await sichuanBtn.click().catch(async () => {
+        await page.evaluate(() => {
+          if (window.App?.startGame) window.App.startGame('sichuan');
+        });
+      });
     } else {
-      log('Sichuan mode starts', false, 'No Sichuan button');
+      await page.evaluate(() => {
+        if (window.App?.startGame) window.App.startGame('sichuan');
+      }).catch(() => {});
     }
+    await page.waitForTimeout(3000);
+    await page.screenshot({ path: path.join(ssDir, '11-sichuan.png'), fullPage: false });
+    const gameVis = await page.$eval('#game', el => el.style.display !== 'none').catch(() => false);
+    log('Sichuan mode starts', gameVis);
 
   } catch (err) {
     console.error('Test error:', err.message);

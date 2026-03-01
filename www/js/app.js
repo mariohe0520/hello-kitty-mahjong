@@ -9,6 +9,8 @@ const App = (() => {
   let currentPage = 'splash';
   let settings = null;
   let settingsOverlay = null;
+  let responsiveBound = false;
+  let responsiveRaf = 0;
 
   function getSettings() {
     if (!settings) {
@@ -16,6 +18,65 @@ const App = (() => {
       settings = profile.settings;
     }
     return settings;
+  }
+
+  function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+  }
+
+  function applyResponsiveMetrics() {
+    const vv = window.visualViewport;
+    const viewportW = Math.round(vv?.width || window.innerWidth || 390);
+    const viewportH = Math.round(vv?.height || window.innerHeight || 844);
+
+    const root = document.documentElement;
+    root.style.setProperty('--app-width', `${viewportW}px`);
+    root.style.setProperty('--app-height', `${viewportH}px`);
+
+    const table = document.getElementById('mahjong-table');
+    let tableW = table ? Math.round(table.getBoundingClientRect().width) : 0;
+    if (!tableW || tableW < 280) {
+      tableW = Math.round(clamp(viewportW - 10, 320, 430));
+    }
+
+    const bottomTileW = clamp((tableW - 58) / 14, 22, 31);
+    const topTileW = clamp((tableW - 88) / 14, 17, 27);
+    const sideTileW = clamp(tableW * 0.09, 30, 38);
+    const sideTileH = clamp(sideTileW * 0.34, 10, 14);
+    const sideColW = clamp(tableW * 0.18, 60, 82);
+
+    root.style.setProperty('--table-width', `${tableW}px`);
+    root.style.setProperty('--tile-bottom-w', `${bottomTileW.toFixed(2)}px`);
+    root.style.setProperty('--tile-top-w', `${topTileW.toFixed(2)}px`);
+    root.style.setProperty('--tile-side-w', `${sideTileW.toFixed(2)}px`);
+    root.style.setProperty('--tile-side-h', `${sideTileH.toFixed(2)}px`);
+    root.style.setProperty('--side-column-w', `${sideColW.toFixed(2)}px`);
+
+    root.classList.toggle('compact-height', viewportH < 820);
+    root.classList.toggle('short-height', viewportH < 740);
+  }
+
+  function scheduleResponsiveMetrics() {
+    if (responsiveRaf) cancelAnimationFrame(responsiveRaf);
+    responsiveRaf = requestAnimationFrame(() => {
+      responsiveRaf = 0;
+      applyResponsiveMetrics();
+    });
+  }
+
+  function setupResponsiveLayout() {
+    if (responsiveBound) return;
+    responsiveBound = true;
+
+    window.addEventListener('resize', scheduleResponsiveMetrics, { passive: true });
+    window.addEventListener('orientationchange', scheduleResponsiveMetrics, { passive: true });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', scheduleResponsiveMetrics, { passive: true });
+    }
+
+    scheduleResponsiveMetrics();
+    setTimeout(scheduleResponsiveMetrics, 120);
+    setTimeout(scheduleResponsiveMetrics, 500);
   }
 
   // ╔═══════════════════════════════════════════════════════════╗
@@ -107,6 +168,8 @@ const App = (() => {
     if (pageId === 'story') renderStoryPage();
     if (pageId === 'collection') renderCollectionPage();
     if (pageId === 'achievements') renderAchievementsPage();
+
+    scheduleResponsiveMetrics();
   }
 
   function updateTabBar(pageId) {
@@ -371,6 +434,7 @@ const App = (() => {
     }
 
     navigateTo('game');
+    scheduleResponsiveMetrics();
     setTimeout(() => Game.startGame(mode, { freshStart: true }), 300);
   }
 
@@ -396,6 +460,7 @@ const App = (() => {
     const rules = chapter?.rules || 'beijing';
 
     navigateTo('game');
+    scheduleResponsiveMetrics();
     setTimeout(() => {
       Game.startGame(rules, {
         campaignLevel: level,
@@ -409,14 +474,16 @@ const App = (() => {
   function showDialogue(text, onComplete) {
     const overlay = document.createElement('div');
     overlay.className = 'dialogue-overlay';
+    // 注意：按钮不使用 inline onclick，避免与 addEventListener 重复触发
     overlay.innerHTML = `
       <div class="dialogue-box">
         <div class="dialogue-text">${text}</div>
-        <button class="dialogue-btn" onclick="this.closest('.dialogue-overlay').remove()">继续 ›</button>
+        <button class="dialogue-btn">继续 ›</button>
       </div>
     `;
     document.body.appendChild(overlay);
     overlay.querySelector('.dialogue-btn').addEventListener('click', () => {
+      overlay.remove();
       if (onComplete) onComplete();
     });
   }
@@ -522,6 +589,9 @@ const App = (() => {
       if (!confirm('确定要退出当前对局吗？')) return;
     }
     if (Game.getState()) Game.destroy();
+    // 清理残留 UI（防止 action bar 留在主页）
+    const actionBar = document.getElementById('action-bar');
+    if (actionBar) actionBar.style.display = 'none';
     const winScreen = document.getElementById('win-screen');
     if (winScreen) winScreen.style.display = 'none';
     const scoreBoard = document.getElementById('round-scoreboard');
@@ -694,6 +764,7 @@ const App = (() => {
   function init() {
     getSettings();
     Game.Sound.setMuted(!settings.soundEnabled);
+    setupResponsiveLayout();
 
     // Tab bar events
     document.querySelectorAll('.tab-item').forEach(tab => {
@@ -715,6 +786,7 @@ const App = (() => {
     });
 
     initSplash();
+    scheduleResponsiveMetrics();
   }
 
   if (document.readyState === 'loading') {
